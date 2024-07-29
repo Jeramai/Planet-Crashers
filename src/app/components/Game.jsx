@@ -140,7 +140,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   // Merge planets when touching
   const posVec3 = new Vector3();
   const onCollide = ({ body, target }) => {
-    if (body.userData.type === target.userData.type) {
+    if (body?.userData?.type === target?.userData?.type) {
       // Don't merge on suns
       if (body.userData.type === planetTypes.SUN || target.userData.type === planetTypes.SUN) return;
 
