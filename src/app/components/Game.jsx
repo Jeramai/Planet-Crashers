@@ -133,9 +133,9 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     camera.getWorldDirection(direction);
 
     const objectPosition = new Vector3();
-    objectPosition.copy(camera.position).addScaledVector(direction, planetArgs.args[0] * 2);
+    objectPosition.copy(camera.position).addScaledVector(direction, (planetArgs?.args[0] ?? 0) * 2);
     return [objectPosition.x, objectPosition.y, objectPosition.z];
-  }, [camera]);
+  }, [camera, planetArgs?.args]);
 
   // Merge planets when touching
   const posVec3 = new Vector3();
@@ -179,7 +179,6 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     userData: { timestamp, type },
     // Planet overwrites
     ...planetArgs
-    // mass: 1 // Force same mass for now, so the planets go at the same speed
   }));
 
   // Aply gravity towards the gravity point
@@ -188,7 +187,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     const applyGravityToCenter = (planetPosition) => {
       const moon_to_planet = new Vector3(-planetPosition[0], -planetPosition[1], -planetPosition[2]);
       moon_to_planet.normalize();
-      moon_to_planet.multiplyScalar(Math.max(1, planetArgs.mass));
+      moon_to_planet.multiplyScalar(Math.max(1, planetArgs?.mass || 1));
 
       moonForce.current.copy(moon_to_planet);
       api.applyForce([moonForce.current.x, moonForce.current.y, moonForce.current.z], [0, 0, 0]);
@@ -196,7 +195,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
 
     const unsubscribe = api.position.subscribe(applyGravityToCenter);
     return () => unsubscribe();
-  }, [api.position]);
+  }, [api, planetArgs?.mass]);
 
   return (
     <mesh ref={ref}>

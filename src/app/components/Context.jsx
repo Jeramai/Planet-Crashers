@@ -22,7 +22,7 @@ export default function GameContextWrapper({ children }) {
       const randomIndex = Math.floor(Math.random() * planetNames.length);
       setPlanetTypeQueue((ptq) => [...ptq, planetNames[randomIndex]]);
     }
-  }, [planetTypes, planetTypeQueue.length]);
+  }, [planetTypeQueue.length]);
 
   const value = useMemo(
     () => ({
