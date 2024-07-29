@@ -30,8 +30,8 @@ export default function Game() {
   const [shotPlanets, setShotPlanets] = useState([]);
 
   const onClick = (e) => {
-    // On right click, shoot
-    if (e.button === 2) {
+    // On right click or touch end, shoot
+    if (e.button === 2 || e.type === 'touchend') {
       // Unset the collision pairs
       setCollisionPairs([]);
 
@@ -79,7 +79,7 @@ export default function Game() {
   }, [setScore, collisionPairs]);
 
   return (
-    <Canvas className='w-full h-full flex flex-1' onPointerUp={onClick}>
+    <Canvas className='w-full h-full flex flex-1' onPointerUp={onClick} onTouchEnd={onClick}>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
       <OrbitControls minDistance={10} maxDistance={25} enablePan={false} />
