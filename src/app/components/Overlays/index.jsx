@@ -50,7 +50,7 @@ function PlanetsShowcase({ currentPlanet, nextPlanet }) {
           {currentPlanet ? (
             <Image
               priority
-              src={`/textures/2k_${currentPlanet}.jpg`}
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH}textures/2k_${currentPlanet}.jpg`}
               width={100}
               height={100}
               alt={`Current planet "${currentPlanet}"`}
@@ -67,7 +67,7 @@ function PlanetsShowcase({ currentPlanet, nextPlanet }) {
           <span className='relative text-3xl font-semibold mb-2'>
             {nextPlanet ? (
               <Image
-                src={`/textures/2k_${nextPlanet}.jpg`}
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH}textures/2k_${nextPlanet}.jpg`}
                 width={60}
                 height={60}
                 alt={`Next planet: "${nextPlanet}"`}
