@@ -48,7 +48,7 @@ export default function Game() {
   };
 
   // Set test planets
-  const showPlanets = false;
+  const showPlanets = !false;
   useEffect(() => {
     if (showPlanets) {
       setShotPlanets([
@@ -171,7 +171,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, type = planetTypes.MOON, p
   return (
     <mesh ref={ref}>
       <sphereGeometry args={planetArgs.args} />
-      <meshBasicMaterial color={planetArgs.color ?? 'orange'} map={map} />
+      <meshBasicMaterial color={0xffffff} map={map} />
       <Outlines thickness={outlineThickness} color='white' screenspace />
     </mesh>
   );
@@ -213,7 +213,7 @@ const getPlanetArgs = (type) => {
       return {
         args: [1], // Size of Earth
         mass: 1, // Mass of Earth
-        color: '#040d42'
+        color: '#FFFFFF'
       };
     case planetTypes.VENUS:
       return {
