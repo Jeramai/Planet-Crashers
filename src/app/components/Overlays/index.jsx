@@ -1,9 +1,10 @@
 'use client';
 
-import { imgPrefix } from '@/app/page';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useGameContext } from '../Context';
+
+export const imgPrefix = process.env.NODE_ENV === 'production' ? '/Planet-Crashers/' : '/';
 
 export default function Overlays() {
   const { score, planetTypeQueue } = useGameContext();
