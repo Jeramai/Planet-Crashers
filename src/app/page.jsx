@@ -1,13 +1,11 @@
 import GameContextWrapper from './components/Context';
-import Game from './components/Game';
-import Overlays from './components/Overlays';
+import GameWrapper from './components/GameWrapper';
 
 export default function Home() {
   return (
     <main className='h-full w-full'>
       <GameContextWrapper>
-        <Game />
-        <Overlays />
+        <GameWrapper />
       </GameContextWrapper>
     </main>
   );

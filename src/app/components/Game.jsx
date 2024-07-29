@@ -24,6 +24,8 @@ useTexture.preload([
   `${imgPrefix}textures/2k_pluto.jpg`
 ]);
 
+const dangerZoneRadius = 13;
+
 export default function Game() {
   const { planetTypeQueue, setPlanetTypeQueue, setScore } = useGameContext();
 
@@ -117,7 +119,7 @@ function DangerZone() {
   });
 
   return (
-    <Sphere ref={ref} name='DANGER_ZONE' args={[13]} position={[0, 0, 0]}>
+    <Sphere ref={ref} name='DANGER_ZONE' args={[dangerZoneRadius]} position={[0, 0, 0]}>
       <meshBasicMaterial color='red' opacity={0.05} transparent />
     </Sphere>
   );
@@ -129,14 +131,18 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
 
   // Get planet shoot position
   const camera = useThree((state) => state.camera);
-  const startPosition = useMemo(() => {
+  const direction = useMemo(() => {
     const direction = new Vector3();
     camera.getWorldDirection(direction);
+    return direction;
+  }, [camera]);
+  const startPosition = useMemo(() => {
+    if (position) return position;
 
     const objectPosition = new Vector3();
     objectPosition.copy(camera.position).addScaledVector(direction, (planetArgs?.args[0] ?? 0) * 2);
-    return [objectPosition.x, objectPosition.y, objectPosition.z];
-  }, [camera, planetArgs?.args]);
+    return [objectPosition.x ?? 0, objectPosition.y ?? 0, objectPosition.z ?? 0];
+  }, [camera, direction, planetArgs?.args, position]);
 
   // Merge planets when touching
   const posVec3 = new Vector3();
@@ -157,7 +163,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
             const newPlanet = {
               timestamp: bodyPlanet.timestamp - 1,
               type: Object.values(planetTypes)[bodyPlanetTypeIndex - 1],
-              position: [worldPosition.x, worldPosition.y, worldPosition.z]
+              position: [worldPosition.x ?? 0, worldPosition.y ?? 0, worldPosition.z ?? 0]
             };
             return [...newSP, newPlanet];
           }
@@ -173,16 +179,18 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   // Create the shootable planet
   const [ref, api] = useSphere(() => ({
     type: 'Dynamic',
-    position: position ?? startPosition,
     linearDamping: 0.1,
     angularDamping: 0.1,
+    position: startPosition,
     onCollideBegin: onCollide,
     userData: { timestamp, type },
+    velocity: [direction.x, direction.y, direction.z],
     // Planet overwrites
     ...planetArgs
   }));
 
   // Aply gravity towards the gravity point
+  const { setLives } = useGameContext();
   const moonForce = useRef(new Vector3());
   useEffect(() => {
     const applyGravityToCenter = (planetPosition) => {
@@ -194,7 +202,24 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
       api.applyForce([moonForce.current.x, moonForce.current.y, moonForce.current.z], [0, 0, 0]);
     };
 
-    const unsubscribe = api.position.subscribe(applyGravityToCenter);
+    // If sphere is outside of the dangerzone for longer than 3 seconds. Remove a live.
+
+    const dangerZoneCenter = new Vector3();
+    const planetPosVector3 = new Vector3();
+    const checkOutsideOfDangerZone = (planetPosition) => {
+      planetPosVector3.set(planetPosition[0], planetPosition[1], planetPosition[2]);
+      const distance = planetPosVector3.distanceTo(dangerZoneCenter);
+
+      if (distance > dangerZoneRadius) {
+        setLives((l) => l - 1);
+        setShotPlanets((sp) => sp.filter((_sp) => _sp.timestamp !== timestamp));
+      }
+    };
+
+    const unsubscribe = api.position.subscribe((pos) => {
+      applyGravityToCenter(pos);
+      checkOutsideOfDangerZone(pos);
+    });
     return () => unsubscribe();
   }, [api, planetArgs?.mass]);
 
