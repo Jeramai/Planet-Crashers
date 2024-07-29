@@ -4,6 +4,7 @@ import { useGameContext } from './Context';
 import Game from './Game';
 import GameOver from './GameOver';
 import Menu from './Menu';
+import Options from './Options';
 import Overlays from './Overlays';
 
 export default function GameWrapper() {
@@ -18,7 +19,7 @@ export default function GameWrapper() {
           <Overlays />
         </>
       ) : null}
-      {gameState === 'OPTIONS' ? <GameOver /> : null}
+      {gameState === 'OPTIONS' ? <Options /> : null}
       {gameState === 'GAME_OVER' ? <GameOver /> : null}
     </>
   );
