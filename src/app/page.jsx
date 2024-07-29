@@ -12,4 +12,4 @@ export default function Home() {
     </main>
   );
 }
-export const imgPrefix = process.env.NODE_ENV === 'production' ? '/Planet-Crashers' : '/';
+export const imgPrefix = process.env.NODE_ENV === 'production' ? '/Planet-Crashers/' : '/';
