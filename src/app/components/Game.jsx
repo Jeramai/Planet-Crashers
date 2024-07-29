@@ -24,6 +24,7 @@ useTexture.preload([
 
 export default function Game() {
   const [shotPlanets, setShotPlanets] = useState([]);
+  // useEffect(() => console.log(shotPlanets), [shotPlanets]);
 
   const onClick = (e) => {
     const planetNames = Object.values(planetTypes)
@@ -75,7 +76,7 @@ export default function Game() {
 
       <Physics gravity={[0, 0, 0]}>
         {shotPlanets.map((planet) => (
-          <ShootablePlanet key={planet.timestamp} type={planet.type} position={planet.position} />
+          <ShootablePlanet key={planet.timestamp} {...planet} setShotPlanets={setShotPlanets} />
         ))}
 
         {/* Helper objects */}
@@ -104,10 +105,39 @@ function DangerZone() {
     </Sphere>
   );
 }
-function ShootablePlanet({ type = planetTypes.MOON, position = undefined }) {
+function ShootablePlanet({ timestamp, setShotPlanets, type = planetTypes.MOON, position = undefined }) {
   const camera = useThree((state) => state.camera);
   const planetArgs = getPlanetArgs(type);
   const map = useTexture(`./textures/2k_${type}.jpg`);
+  const outlineThickness = Math.min(0.05 * planetArgs.args[0], 0.1);
+
+  // Merge planets when touching
+  const posVec3 = new Vector3();
+  const onCollide = ({ body, target }) => {
+    if (body.userData.type === target.userData.type) {
+      // Don't merge on suns
+      if (body.userData.type === planetTypes.SUN || target.userData.type === planetTypes.SUN) return;
+
+      setShotPlanets((sp) => {
+        const bodyPlanet = sp.find((_sp) => _sp.timestamp === body.userData.timestamp);
+        if (bodyPlanet) {
+          const bodyPlanetTypeIndex = Object.values(planetTypes).findIndex((v) => v === bodyPlanet.type);
+          if (bodyPlanetTypeIndex !== -1) {
+            const newSP = sp.filter((p) => p.timestamp !== target.userData.timestamp && p.timestamp !== body.userData.timestamp);
+
+            const worldPosition = body.getWorldPosition(posVec3);
+            const newPlanet = {
+              timestamp: bodyPlanet.timestamp - 1,
+              type: Object.values(planetTypes)[bodyPlanetTypeIndex - 1],
+              position: [worldPosition.x, worldPosition.y, worldPosition.z]
+            };
+            return [...newSP, newPlanet];
+          }
+        }
+        return sp;
+      });
+    }
+  };
 
   // Create the shootable planet
   const [ref, api] = useSphere(() => ({
@@ -115,6 +145,8 @@ function ShootablePlanet({ type = planetTypes.MOON, position = undefined }) {
     position: position ?? [camera.position.x, camera.position.y, camera.position.z],
     linearDamping: 0.5,
     angularDamping: 0.5,
+    onCollideBegin: onCollide,
+    userData: { timestamp, type },
     // Planet overwrites
     ...planetArgs,
     mass: 1 // Force same mass for now, so the planets go at the same speed
@@ -140,7 +172,7 @@ function ShootablePlanet({ type = planetTypes.MOON, position = undefined }) {
     <mesh ref={ref}>
       <sphereGeometry args={planetArgs.args} />
       <meshBasicMaterial color={planetArgs.color ?? 'orange'} map={map} />
-      <Outlines thickness={0.1} color='white' screenspace />
+      <Outlines thickness={outlineThickness} color='white' screenspace />
     </mesh>
   );
 }

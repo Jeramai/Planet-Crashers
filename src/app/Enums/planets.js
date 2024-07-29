@@ -1,13 +1,13 @@
 const planetTypes = {
   SUN: 'sun',
-  MERCURY: 'mercury',
-  VENUS: 'venus',
-  EARTH: 'earth',
-  MARS: 'mars',
   JUPITER: 'jupiter',
   SATURN: 'saturn',
   URANUS: 'uranus',
   NEPTUNE: 'neptune',
+  EARTH: 'earth',
+  VENUS: 'venus',
+  MARS: 'mars',
+  MERCURY: 'mercury',
   PLUTO: 'pluto',
   MOON: 'moon'
 };
