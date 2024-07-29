@@ -6,6 +6,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import planetTypes from '../Enums/planets';
+import { useGameContext } from './Context';
 
 // https://www.solarsystemscope.com/textures/
 useTexture.preload([
@@ -23,32 +24,33 @@ useTexture.preload([
 ]);
 
 export default function Game() {
+  const { planetTypeQueue, setPlanetTypeQueue, setScore } = useGameContext();
+
   const [shotPlanets, setShotPlanets] = useState([]);
-  // useEffect(() => console.log(shotPlanets), [shotPlanets]);
 
   const onClick = (e) => {
-    const planetNames = Object.values(planetTypes)
-      // Filter out all unshootable planets
-      .filter(
-        (pt) => ![planetTypes.SUN, planetTypes.JUPITER, planetTypes.SATURN, planetTypes.URANUS, planetTypes.NEPTUNE].includes(pt)
-      );
-
-    const randomIndex = Math.floor(Math.random() * planetNames.length);
-    const type = planetNames[randomIndex];
-
-    const newPlanet = {
-      timestamp: Date.now(),
-      type
-    };
-
     // On right click, shoot
     if (e.button === 2) {
+      // Unset the collision pairs
+      setCollisionPairs([]);
+
+      // Add the shot planet
+      const newPlanet = {
+        timestamp: Date.now(),
+        type: planetTypeQueue[0]
+      };
       setShotPlanets((sp) => [...sp, newPlanet]);
+
+      // Remove first item from queue
+      setPlanetTypeQueue((ptq) => {
+        const [, ...rest] = ptq;
+        return rest;
+      });
     }
   };
 
   // Set test planets
-  const showPlanets = !false;
+  const showPlanets = false;
   useEffect(() => {
     if (showPlanets) {
       setShotPlanets([
@@ -67,6 +69,14 @@ export default function Game() {
     }
   }, [showPlanets]);
 
+  // Update score based on collided planets
+  const [collisionPairs, setCollisionPairs] = useState([]);
+  useEffect(() => {
+    collisionPairs.forEach((planetType) => {
+      setScore((s) => s + getPlanetArgs(planetType).points / 2);
+    });
+  }, [setScore, collisionPairs]);
+
   return (
     <Canvas className='w-full h-full flex flex-1' onPointerUp={onClick}>
       <ambientLight intensity={0.5} />
@@ -76,7 +86,13 @@ export default function Game() {
 
       <Physics gravity={[0, 0, 0]}>
         {shotPlanets.map((planet) => (
-          <ShootablePlanet key={planet.timestamp} {...planet} setShotPlanets={setShotPlanets} />
+          <ShootablePlanet
+            key={planet.timestamp}
+            {...planet}
+            setShotPlanets={setShotPlanets}
+            collisionPairs={collisionPairs}
+            setCollisionPairs={setCollisionPairs}
+          />
         ))}
 
         {/* Helper objects */}
@@ -105,7 +121,7 @@ function DangerZone() {
     </Sphere>
   );
 }
-function ShootablePlanet({ timestamp, setShotPlanets, type = planetTypes.MOON, position = undefined }) {
+function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = planetTypes.MOON, position = undefined }) {
   const camera = useThree((state) => state.camera);
   const planetArgs = getPlanetArgs(type);
   const map = useTexture(`./textures/2k_${type}.jpg`);
@@ -118,13 +134,14 @@ function ShootablePlanet({ timestamp, setShotPlanets, type = planetTypes.MOON, p
       // Don't merge on suns
       if (body.userData.type === planetTypes.SUN || target.userData.type === planetTypes.SUN) return;
 
+      // Merge the colliding planets
       setShotPlanets((sp) => {
         const bodyPlanet = sp.find((_sp) => _sp.timestamp === body.userData.timestamp);
         if (bodyPlanet) {
           const bodyPlanetTypeIndex = Object.values(planetTypes).findIndex((v) => v === bodyPlanet.type);
           if (bodyPlanetTypeIndex !== -1) {
+            // Remove old planets and create a new one
             const newSP = sp.filter((p) => p.timestamp !== target.userData.timestamp && p.timestamp !== body.userData.timestamp);
-
             const worldPosition = body.getWorldPosition(posVec3);
             const newPlanet = {
               timestamp: bodyPlanet.timestamp - 1,
@@ -136,6 +153,9 @@ function ShootablePlanet({ timestamp, setShotPlanets, type = planetTypes.MOON, p
         }
         return sp;
       });
+
+      // Add the collision to the CP flag
+      setCollisionPairs((cp) => [...cp, body.userData.type]);
     }
   };
 
@@ -183,68 +203,79 @@ const getPlanetArgs = (type) => {
       return {
         args: [6], // Approximate size relative to Earth
         mass: 1, // Mass relative to Earth
-        color: '#f49f16'
+        color: '#f49f16',
+        points: 0
       };
     case planetTypes.JUPITER:
       return {
         args: [4], // Approximate size relative to Earth
         mass: 318, // Mass relative to Earth
-        color: '#c1a375'
+        color: '#c1a375',
+        points: 256
       };
     case planetTypes.SATURN:
       return {
         args: [3], // Approximate size relative to Earth
         mass: 95, // Mass relative to Earth
-        color: '#d3cba9'
+        color: '#d3cba9',
+        points: 256
       };
     case planetTypes.URANUS:
       return {
         args: [2.25], // Approximate size relative to Earth
         mass: 14.5, // Mass relative to Earth
-        color: '#98cdd0'
+        color: '#98cdd0',
+        points: 128
       };
     case planetTypes.NEPTUNE:
       return {
         args: [1.5], // Approximate size relative to Earth
         mass: 17.1, // Mass relative to Earth
-        color: '#76aef7'
+        color: '#76aef7',
+        points: 64
       };
     case planetTypes.EARTH:
       return {
         args: [1], // Size of Earth
         mass: 1, // Mass of Earth
-        color: '#FFFFFF'
+        color: '#FFFFFF',
+        points: 32
       };
     case planetTypes.VENUS:
       return {
         args: [0.75], // Approximate size relative to Earth
         mass: 0.815, // Mass relative to Earth
-        color: '#c49863'
+        color: '#c49863',
+        points: 16
       };
     case planetTypes.MARS:
       return {
         args: [0.5], // Approximate size relative to Earth
         mass: 0.107, // Mass relative to Earth
-        color: '#be7757'
+        color: '#be7757',
+        points: 8
       };
     case planetTypes.MERCURY:
       return {
         args: [0.3], // Approximate size relative to Earth
         mass: 0.055, // Mass relative to Earth
-        color: '#8a878d'
+        color: '#8a878d',
+        points: 4
       };
     case planetTypes.PLUTO:
       return {
         args: [0.2], // Approximate size relative to Earth
         mass: 0.0022, // Mass relative to Earth
-        color: '#55332e'
+        color: '#55332e',
+        points: 2
       };
     case planetTypes.MOON:
     default:
       return {
         args: [0.1], // Approximate size of the Moon relative to Earth
         mass: 0.0123, // Mass of the Moon relative to Earth
-        color: '#74798c'
+        color: '#74798c',
+        points: 1
       };
   }
 };
