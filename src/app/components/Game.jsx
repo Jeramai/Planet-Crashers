@@ -7,20 +7,21 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import planetTypes from '../Enums/planets';
 import { useGameContext } from './Context';
+import { imgPrefix } from './Overlays';
 
 // https://www.solarsystemscope.com/textures/
 useTexture.preload([
-  '/textures/2k_mercury.jpg',
-  '/textures/2k_venus.jpg',
-  '/textures/2k_mars.jpg',
-  '/textures/2k_jupiter.jpg',
-  '/textures/2k_saturn.jpg',
-  '/textures/2k_uranus.jpg',
-  '/textures/2k_neptune.jpg',
-  '/textures/2k_earth.jpg',
-  '/textures/2k_moon.jpg',
-  '/textures/2k_sun.jpg',
-  '/textures/2k_pluto.jpg'
+  `${imgPrefix}textures/2k_mercury.jpg`,
+  `${imgPrefix}textures/2k_venus.jpg`,
+  `${imgPrefix}textures/2k_mars.jpg`,
+  `${imgPrefix}textures/2k_jupiter.jpg`,
+  `${imgPrefix}textures/2k_saturn.jpg`,
+  `${imgPrefix}textures/2k_uranus.jpg`,
+  `${imgPrefix}textures/2k_neptune.jpg`,
+  `${imgPrefix}textures/2k_earth.jpg`,
+  `${imgPrefix}textures/2k_moon.jpg`,
+  `${imgPrefix}textures/2k_sun.jpg`,
+  `${imgPrefix}textures/2k_pluto.jpg`
 ]);
 
 export default function Game() {
