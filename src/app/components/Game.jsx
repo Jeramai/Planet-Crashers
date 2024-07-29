@@ -3,7 +3,7 @@
 import { Physics, useSphere } from '@react-three/cannon';
 import { OrbitControls, Outlines, Sphere, Stars, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import planetTypes from '../Enums/planets';
 import { useGameContext } from './Context';
@@ -81,7 +81,7 @@ export default function Game() {
     <Canvas className='w-full h-full flex flex-1' onPointerUp={onClick}>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
-      <OrbitControls maxDistance={25} enablePan={false} />
+      <OrbitControls minDistance={10} maxDistance={25} enablePan={false} />
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
       <Physics gravity={[0, 0, 0]}>
@@ -116,16 +116,26 @@ function DangerZone() {
   });
 
   return (
-    <Sphere ref={ref} name='DANGER_ZONE' args={[15]} position={[0, 0, 0]}>
+    <Sphere ref={ref} name='DANGER_ZONE' args={[13]} position={[0, 0, 0]}>
       <meshBasicMaterial color='red' opacity={0.05} transparent />
     </Sphere>
   );
 }
 function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = planetTypes.MOON, position = undefined }) {
-  const camera = useThree((state) => state.camera);
   const planetArgs = getPlanetArgs(type);
   const map = useTexture(`./textures/2k_${type}.jpg`);
   const outlineThickness = Math.min(0.05 * planetArgs.args[0], 0.1);
+
+  // Get planet shoot position
+  const camera = useThree((state) => state.camera);
+  const startPosition = useMemo(() => {
+    const direction = new Vector3();
+    camera.getWorldDirection(direction);
+
+    const objectPosition = new Vector3();
+    objectPosition.copy(camera.position).addScaledVector(direction, planetArgs.args[0] * 2);
+    return [objectPosition.x, objectPosition.y, objectPosition.z];
+  }, [camera]);
 
   // Merge planets when touching
   const posVec3 = new Vector3();
@@ -162,14 +172,14 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   // Create the shootable planet
   const [ref, api] = useSphere(() => ({
     type: 'Dynamic',
-    position: position ?? [camera.position.x, camera.position.y, camera.position.z],
-    linearDamping: 0.5,
-    angularDamping: 0.5,
+    position: position ?? startPosition,
+    linearDamping: 0.1,
+    angularDamping: 0.1,
     onCollideBegin: onCollide,
     userData: { timestamp, type },
     // Planet overwrites
-    ...planetArgs,
-    mass: 1 // Force same mass for now, so the planets go at the same speed
+    ...planetArgs
+    // mass: 1 // Force same mass for now, so the planets go at the same speed
   }));
 
   // Aply gravity towards the gravity point
@@ -178,7 +188,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     const applyGravityToCenter = (planetPosition) => {
       const moon_to_planet = new Vector3(-planetPosition[0], -planetPosition[1], -planetPosition[2]);
       moon_to_planet.normalize();
-      moon_to_planet.multiplyScalar(50);
+      moon_to_planet.multiplyScalar(Math.max(1, planetArgs.mass));
 
       moonForce.current.copy(moon_to_planet);
       api.applyForce([moonForce.current.x, moonForce.current.y, moonForce.current.z], [0, 0, 0]);
