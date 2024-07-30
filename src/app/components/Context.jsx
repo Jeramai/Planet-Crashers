@@ -14,7 +14,9 @@ export default function GameContextWrapper({ children }) {
   // Keep track of local highscore
   const [highscore, setHighscore] = useState(0);
   useEffect(() => {
-    const localHighscore = parseInt(localStorage.getItem('highscore')) ?? 0;
+    let localHighscore = localStorage.getItem('highscore');
+    if (isNaN(localHighscore)) localHighscore = 0;
+
     setHighscore(Math.max(score, localHighscore));
 
     if (score > localHighscore) {
