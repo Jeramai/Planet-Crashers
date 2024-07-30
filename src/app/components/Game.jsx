@@ -33,7 +33,7 @@ export default function Game() {
 
   const onClick = (e) => {
     // On right click or touch end, shoot
-    if (e.button === 2 || e.type === 'touchend') {
+    if (e.button === 2) {
       // Unset the collision pairs
       setCollisionPairs([]);
 
@@ -51,6 +51,18 @@ export default function Game() {
       });
     }
   };
+
+  const cursorPos = useRef([0, 0]);
+  const onTouchStart = (e) => {
+      cursorPos.current = [e.pageX, e.pageY];
+    },
+    onTouchEnd = (e) => {
+      if (cursorPos.current[0] === e.pageX && cursorPos.current[1] === e.pageY) {
+        if (e.pointerType === 'touch') e.button = 2;
+        onClick(e);
+      }
+      cursorPos.current = [e.pageX, e.pageY];
+    };
 
   // Set test planets
   const showPlanets = false;
@@ -81,7 +93,7 @@ export default function Game() {
   }, [setScore, collisionPairs]);
 
   return (
-    <Canvas className='w-full h-full flex flex-1' onPointerUp={onClick} onTouchEnd={onClick}>
+    <Canvas className='w-full h-full flex flex-1 bg-black' onPointerDown={onTouchStart} onPointerUp={onTouchEnd}>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
       <OrbitControls minDistance={10} maxDistance={25} enablePan={false} />
