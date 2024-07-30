@@ -11,6 +11,17 @@ export default function GameContextWrapper({ children }) {
   const [planetTypeQueue, setPlanetTypeQueue] = useState([planetTypes.MOON]);
   const [lives, setLives] = useState(3);
 
+  // Keep track of local highscore
+  const [highscore, setHighscore] = useState(0);
+  useEffect(() => {
+    const localHighscore = parseInt(localStorage.getItem('highscore')) ?? 0;
+    setHighscore(Math.max(score, localHighscore));
+
+    if (score > localHighscore) {
+      localStorage.setItem('highscore', score);
+    }
+  }, [score]);
+
   // Create the next item for the planetTypeQueu
   useEffect(() => {
     if (planetTypeQueue.length === 1) {
@@ -32,12 +43,14 @@ export default function GameContextWrapper({ children }) {
       setGameState,
       score,
       setScore,
+      highscore,
+      setHighscore,
       planetTypeQueue,
       setPlanetTypeQueue,
       lives,
       setLives
     }),
-    [gameState, score, planetTypeQueue, lives]
+    [gameState, score, planetTypeQueue, lives, highscore]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -10,7 +10,7 @@ export default function GameOver() {
   useEffect(() => {
     setLives(3);
     setPlanetTypeQueue([planetTypes.MOON]);
-  }, []);
+  }, [setLives, setPlanetTypeQueue]);
 
   return (
     <div className='p-24 flex flex-col items-center gap-5'>

@@ -24,18 +24,8 @@ export default function Overlays() {
 }
 
 function Score() {
-  const { score } = useGameContext();
+  const { score, highscore } = useGameContext();
   const [showHighscore, setShowHighscore] = useState(false);
-
-  const [highscore, setHighscore] = useState(0);
-  useEffect(() => {
-    const localHighscore = parseInt(localStorage.getItem('highscore')) ?? 0;
-    setHighscore(Math.max(score, localHighscore));
-
-    if (score > localHighscore) {
-      localStorage.setItem('highscore', score);
-    }
-  }, [score]);
 
   return (
     <div className='flex justify-center'>
@@ -56,7 +46,7 @@ function Lives() {
     if (lives <= 0) {
       setGameState('GAME_OVER');
     }
-  }, [lives]);
+  }, [lives, setGameState]);
 
   return (
     <div className='flex justify-center'>
