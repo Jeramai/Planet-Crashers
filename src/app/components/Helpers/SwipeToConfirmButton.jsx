@@ -12,7 +12,8 @@ export default function SwipeToConfirmButton({ children, onConfirm = () => {}, o
   const onDrag = useCallback(
       (e) => {
         if (isDragging) {
-          setSliderLeft(Math.min(Math.max(0, e.clientX - startX), containerWidth));
+          const touch = e.touches ? e.touches[0] : e;
+          setSliderLeft(Math.min(Math.max(0, touch.clientX - startX), containerWidth));
         }
       },
       [isDragging, containerWidth, startX]
@@ -32,7 +33,9 @@ export default function SwipeToConfirmButton({ children, onConfirm = () => {}, o
       (e) => {
         onReset();
         setIsDragging(true);
-        setStartX(e.clientX);
+
+        const touch = e.touches ? e.touches[0] : e;
+        setStartX(touch.clientX);
       },
       [onReset]
     );
@@ -50,10 +53,14 @@ export default function SwipeToConfirmButton({ children, onConfirm = () => {}, o
           ref={slider}
           className='w-[75px] h-full bg-cyan-400/70 rounded-2xl absolute top-0 flex items-center justify-center text-white text-xl'
           style={{ left: Math.min(sliderLeft, containerWidth - 75) + 'px', cursor: isDragging ? 'grabbing' : 'grab' }}
-          onPointerDown={startDrag}
-          onPointerMove={onDrag}
-          onPointerUp={stopDrag}
-          onPointerLeave={stopDrag}
+          onMouseDown={startDrag}
+          onMouseMove={onDrag}
+          onMouseUp={stopDrag}
+          onMouseLeave={stopDrag}
+          onTouchStart={startDrag}
+          onTouchMove={onDrag}
+          onTouchEnd={stopDrag}
+          onTouchCancel={stopDrag}
         >
           &#x2192;
         </div>
