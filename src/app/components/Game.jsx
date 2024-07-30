@@ -233,7 +233,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
       checkOutsideOfDangerZone(pos);
     });
     return () => unsubscribe();
-  }, [api, planetArgs?.mass]);
+  }, [api, timestamp, planetArgs?.mass, setLives, setShotPlanets]);
 
   return (
     <mesh ref={ref}>
