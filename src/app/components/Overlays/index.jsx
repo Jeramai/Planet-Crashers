@@ -8,10 +8,10 @@ export const imgPrefix = process.env.NODE_ENV === 'production' ? '/Planet-Crashe
 
 export default function Overlays() {
   return (
-    <div className='fixed top-0 left-0 pointer-events-none w-full h-full flex flex-col justify-between select-none'>
+    <div className='fixed top-0 left-0 pointer-events-nonea w-full h-full flex flex-col justify-between gap-3 select-none'>
       <Score />
-      <div className='flex justify-between items-end p-3'>
-        <div className='w-full' />
+      <div className='flex justify-between items-end py-3 px-1 sm:p-3 gap-3'>
+        <div className='w-full hidden sm:flex' />
         <div className='w-full flex justify-center'>
           <Lives />
         </div>
@@ -50,7 +50,7 @@ function Lives() {
 
   return (
     <div className='flex justify-center'>
-      <div className='flex gap-3 items-center mt-3 px-7 py-3 border-2 rounded-3xl border-cyan-400/70 bg-cyan-300/10 pointer-events-auto'>
+      <div className='flex gap-3 items-center mt-3 px-7 py-3 border-2 rounded-3xl border-cyan-400/70 bg-cyan-300/10'>
         <span className={`text-3xl ${lives === 3 ? '' : 'grayscale'}`}>💜</span>
         <span className={`text-3xl ${lives >= 2 ? '' : 'grayscale'}`}>💜</span>
         <span className={`text-3xl ${lives >= 1 ? '' : 'grayscale'}`}>💜</span>
@@ -71,13 +71,13 @@ function PlanetsShowcase() {
               <Image
                 priority
                 src={`${imgPrefix}textures/2k_${currentPlanet}.jpg`}
-                width={100}
-                height={100}
+                width={70}
+                height={70}
                 alt={`Current planet "${currentPlanet}"`}
-                className='aspect-square rounded-full object-cover'
+                className='aspect-square rounded-full object-cover sm:w-[100px]'
               />
             ) : (
-              <div className='w-[100px] h-[100px]' />
+              <div className='w-[70px] h-[70px] sm:w-[100px] sm:h-[100px]' />
             )}
           </span>
           <span className='text-xs uppercase text-white/70'>Current</span>
@@ -88,13 +88,13 @@ function PlanetsShowcase() {
               {nextPlanet ? (
                 <Image
                   src={`${imgPrefix}textures/2k_${nextPlanet}.jpg`}
-                  width={60}
-                  height={60}
+                  width={35}
+                  height={35}
                   alt={`Next planet: "${nextPlanet}"`}
-                  className='aspect-square rounded-full object-cover'
+                  className='aspect-square rounded-full object-cover sm:w-[60px]'
                 />
               ) : (
-                <div className='w-[60px] h-[60px]' />
+                <div className='w-[35px] h-[35px] sm:w-[60px] sm:h-[60px]' />
               )}
             </span>
             <span className='text-xs uppercase text-white/70'>Up next</span>

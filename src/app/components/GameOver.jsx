@@ -4,12 +4,13 @@ import { useGameContext } from './Context';
 import Button from './Helpers/Button';
 
 export default function GameOver() {
-  const { setGameState, setLives, setPlanetTypeQueue } = useGameContext();
+  const { setGameState, setLives, setPlanetTypeQueue, setScore } = useGameContext();
 
   // On gameover, reset all values
   useEffect(() => {
     setLives(3);
     setPlanetTypeQueue([planetTypes.MOON]);
+    setScore(0);
   }, [setLives, setPlanetTypeQueue]);
 
   return (

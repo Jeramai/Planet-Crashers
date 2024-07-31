@@ -21,7 +21,7 @@ export default function Options() {
   }, []);
 
   return (
-    <div className='p-24 flex flex-col items-center gap-5'>
+    <div className='py-24 px-8 flex flex-col items-center gap-5'>
       <div className='mb-3'>
         <div className='text-4xl font-semibold text-center'>Options</div>
         {msg ? <div className='text-green-400/80 mt-3'>{msg}</div> : null}
