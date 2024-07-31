@@ -156,6 +156,8 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     return [objectPosition.x ?? 0, objectPosition.y ?? 0, objectPosition.z ?? 0];
   }, [camera, direction, planetArgs?.args, position]);
 
+  const positionRef = useRef(startPosition);
+
   // Merge planets when touching
   const posVec3 = new Vector3();
   const onCollide = ({ body, target }) => {
@@ -193,7 +195,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     type: 'Dynamic',
     linearDamping: 0.1,
     angularDamping: 0.1,
-    position: startPosition,
+    position: positionRef.current,
     onCollideBegin: onCollide,
     userData: { timestamp, type },
     velocity: [direction.x, direction.y, direction.z],
@@ -215,7 +217,6 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     };
 
     // If sphere is outside of the dangerzone for longer than 3 seconds. Remove a live.
-
     const dangerZoneCenter = new Vector3();
     const planetPosVector3 = new Vector3();
     const checkOutsideOfDangerZone = (planetPosition) => {
@@ -228,12 +229,18 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
       }
     };
 
-    const unsubscribe = api.position.subscribe((pos) => {
+    // Update position ref
+    const updatePlanetPosition = (planetPosition) => {
+      positionRef.current = planetPosition;
+    };
+
+    // Subscribe to position changes
+    api.position.subscribe((pos) => {
       applyGravityToCenter(pos);
       checkOutsideOfDangerZone(pos);
+      updatePlanetPosition(pos);
     });
-    return () => unsubscribe();
-  }, [api, timestamp, planetArgs?.mass, setLives, setShotPlanets]);
+  }, [api, timestamp, planetArgs.mass, setLives, setShotPlanets]);
 
   return (
     <mesh ref={ref}>

@@ -8,9 +8,9 @@ export default function GameOver() {
 
   // On gameover, reset all values
   useEffect(() => {
-    setLives(3);
     setPlanetTypeQueue([planetTypes.MOON]);
     setScore(0);
+    setLives(3);
   }, [setLives, setPlanetTypeQueue]);
 
   return (
