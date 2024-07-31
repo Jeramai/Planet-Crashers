@@ -1,10 +1,10 @@
 'use client';
 
 import { Physics, useSphere } from '@react-three/cannon';
-import { OrbitControls, Outlines, Sphere, Stars, useTexture } from '@react-three/drei';
+import { OrbitControls, Outlines, Ring, Sphere, Stars, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Vector3 } from 'three';
+import { DoubleSide, RingGeometry, Vector3 } from 'three';
 import planetTypes from '../Enums/planets';
 import { useGameContext } from './Context';
 import { imgPrefix } from './Overlays';
@@ -27,11 +27,16 @@ useTexture.preload([
 const dangerZoneRadius = 13;
 
 export default function Game() {
-  const { planetTypeQueue, setPlanetTypeQueue, setScore } = useGameContext();
+  const { planetTypeQueue, setPlanetTypeQueue, setScore, shotVolume } = useGameContext();
 
   const [shotPlanets, setShotPlanets] = useState([]);
 
-  const shotAudio = new Audio(`${imgPrefix}sounds/shot.mp3`);
+  const shotAudio = useMemo(() => {
+    const audio = new Audio(`${imgPrefix}sounds/shot.mp3`);
+    audio.volume = shotVolume ?? 0.5;
+    return audio;
+  }, [shotVolume]);
+
   const onClick = (e) => {
     // On right click or touch end, shoot
     if (e.button === 2) {
@@ -81,7 +86,7 @@ export default function Game() {
         { timestamp: 6, type: planetTypes.EARTH, position: [6, 0, 0] },
         { timestamp: 7, type: planetTypes.NEPTUNE, position: [8, 0, 0] },
         { timestamp: 8, type: planetTypes.URANUS, position: [9, 0, 0] },
-        { timestamp: 9, type: planetTypes.SATURN, position: [12, 0, 0] },
+        { timestamp: 9, type: planetTypes.SATURN, position: [0, 0, 0] },
         { timestamp: 10, type: planetTypes.JUPITER, position: [15, 0, 0] },
         { timestamp: 11, type: planetTypes.SUN, position: [20, 0, 0] }
       ]);
@@ -141,11 +146,22 @@ function DangerZone() {
   );
 }
 function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = planetTypes.MOON, position = undefined }) {
+  const { lives, setLives, mergeVolume, explosionVolume } = useGameContext();
+
   const planetArgs = getPlanetArgs(type);
   const map = useTexture(`./textures/2k_${type}.jpg`);
   const outlineThickness = Math.min(0.05 * planetArgs.args[0], 0.1);
-  const mergeAudio = new Audio(`${imgPrefix}sounds/merge.mp3`);
-  const explosionAudio = new Audio(`${imgPrefix}sounds/explosion.mp3`);
+
+  const mergeAudio = useMemo(() => {
+    const audio = new Audio(`${imgPrefix}sounds/merge.mp3`);
+    audio.volume = mergeVolume ?? 0.5;
+    return audio;
+  }, [mergeVolume]);
+  const explosionAudio = useMemo(() => {
+    const audio = new Audio(`${imgPrefix}sounds/explosion.mp3`);
+    audio.volume = explosionVolume ?? 0.5;
+    return audio;
+  }, [explosionVolume]);
 
   // Get planet shoot position
   const camera = useThree((state) => state.camera);
@@ -213,7 +229,6 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   }));
 
   // Aply gravity towards the gravity point
-  const { lives, setLives } = useGameContext();
   const moonForce = useRef(new Vector3());
   useEffect(() => {
     const applyGravityToCenter = (planetPosition) => {
@@ -255,11 +270,37 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   }, [api, timestamp, planetArgs.mass, lives, setLives, setShotPlanets]);
 
   return (
-    <mesh ref={ref}>
-      <sphereGeometry args={planetArgs.args} />
-      <meshBasicMaterial color={0xffffff} map={map} />
-      <Outlines thickness={outlineThickness} color='white' screenspace />
-    </mesh>
+    <group ref={ref}>
+      <mesh>
+        <sphereGeometry args={planetArgs.args} />
+        <meshBasicMaterial color={0xffffff} map={map} />
+        <Outlines thickness={outlineThickness} color='white' screenspace />
+      </mesh>
+
+      {/* Add ring for saturn */}
+      {type === planetTypes.SATURN ? <SaturnRing size={planetArgs.args[0]} /> : null}
+    </group>
+  );
+}
+function SaturnRing({ size = 0 }) {
+  const ring = useTexture(`./textures/saturn-rings-top.png`);
+
+  // Create custom ring geometry
+  const geometry = useMemo(() => {
+    const geometry = new RingGeometry(3, 5, 64);
+    const pos = geometry.attributes.position;
+    const v3 = new Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v3.fromBufferAttribute(pos, i);
+      geometry.attributes.uv.setXY(i, v3.length() < 4 ? 0 : 1, 1);
+    }
+    return geometry;
+  }, []);
+
+  return (
+    <Ring args={[size + 1.2, size + 3]} rotation={[-Math.PI / 2, 0, 0]} geometry={geometry}>
+      <meshBasicMaterial color='white' transparent side={DoubleSide} map={ring} />
+    </Ring>
   );
 }
 
