@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang='en' className='h-full w-full'>
+      <head>
+        <link rel='icon' href='/favi/favicon.ico?' sizes='any' />
+      </head>
       <body className={`w-full h-full ${inter.className}`}>{children}</body>
     </html>
   );
