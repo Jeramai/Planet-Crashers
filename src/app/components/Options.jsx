@@ -11,9 +11,11 @@ export default function Options() {
     audioVolume,
     explosionVolume,
     mergeVolume,
+    shotVolume,
     setAudioVolume,
     setExplosionVolume,
-    setMergeVolume
+    setMergeVolume,
+    setShotVolume
   } = useGameContext();
 
   const [msg, setMsg] = useState('');
@@ -39,7 +41,7 @@ export default function Options() {
 
       <Slider
         title='Main volume'
-        value={audioVolume}
+        value={`${audioVolume}`}
         onChange={(e) => {
           setAudioVolume(e.target.valueAsNumber);
           localStorage.setItem('audioVolume', e.target.valueAsNumber);
@@ -49,8 +51,19 @@ export default function Options() {
         step={0.1}
       />
       <Slider
+        title='Shot volume'
+        value={`${shotVolume}`}
+        onChange={(e) => {
+          setShotVolume(e.target.valueAsNumber);
+          localStorage.setItem('shotVolume', e.target.valueAsNumber);
+        }}
+        min={0}
+        max={1}
+        step={0.1}
+      />
+      <Slider
         title='Explosion volume'
-        value={explosionVolume}
+        value={`${explosionVolume}`}
         onChange={(e) => {
           setExplosionVolume(e.target.valueAsNumber);
           localStorage.setItem('explosionVolume', e.target.valueAsNumber);
@@ -61,7 +74,7 @@ export default function Options() {
       />
       <Slider
         title='Merge volume'
-        value={mergeVolume}
+        value={`${mergeVolume}`}
         onChange={(e) => {
           setMergeVolume(e.target.valueAsNumber);
           localStorage.setItem('mergeVolume', e.target.valueAsNumber);

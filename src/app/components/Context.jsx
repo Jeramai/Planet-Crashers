@@ -42,6 +42,7 @@ export default function GameContextWrapper({ children }) {
   const [audioVolume, setAudioVolume] = useState(0.5);
   const [explosionVolume, setExplosionVolume] = useState(0.5);
   const [mergeVolume, setMergeVolume] = useState(0.5);
+  const [shotVolume, setShotVolume] = useState(0.5);
 
   // Get audio from localStorage
   useEffect(() => {
@@ -56,6 +57,10 @@ export default function GameContextWrapper({ children }) {
     let localMergeVolume = localStorage.getItem('mergeVolume');
     if (isNaN(localMergeVolume)) localMergeVolume = 0.5;
     setMergeVolume(localMergeVolume);
+
+    let localShotVolume = localStorage.getItem('shotVolume');
+    if (isNaN(localShotVolume)) localShotVolume = 0.5;
+    setShotVolume(localShotVolume);
   }, []);
 
   const value = useMemo(
@@ -75,9 +80,11 @@ export default function GameContextWrapper({ children }) {
       explosionVolume,
       setExplosionVolume,
       mergeVolume,
-      setMergeVolume
+      setMergeVolume,
+      shotVolume,
+      setShotVolume
     }),
-    [gameState, score, planetTypeQueue, lives, highscore, audioVolume, explosionVolume, mergeVolume]
+    [gameState, score, planetTypeQueue, lives, highscore, audioVolume, explosionVolume, mergeVolume, shotVolume]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -1,17 +1,8 @@
-import { useEffect } from 'react';
-import planetTypes from '../Enums/planets';
 import { useGameContext } from './Context';
 import Button from './Helpers/Button';
 
 export default function GameOver() {
-  const { setGameState, setLives, setPlanetTypeQueue, setScore } = useGameContext();
-
-  // On gameover, reset all values
-  useEffect(() => {
-    setPlanetTypeQueue([planetTypes.MOON]);
-    setScore(0);
-    setLives(3);
-  }, [setLives, setPlanetTypeQueue]);
+  const { setGameState } = useGameContext();
 
   return (
     <div className='py-24 px-8 flex flex-col items-center gap-5'>
