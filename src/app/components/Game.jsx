@@ -21,7 +21,8 @@ useTexture.preload([
   `${imgPrefix}textures/2k_earth.jpg`,
   `${imgPrefix}textures/2k_moon.jpg`,
   `${imgPrefix}textures/2k_sun.jpg`,
-  `${imgPrefix}textures/2k_pluto.jpg`
+  `${imgPrefix}textures/2k_pluto.jpg`,
+  `${imgPrefix}textures/saturn-rings-top.png`
 ]);
 
 const dangerZoneRadius = 13;
@@ -149,7 +150,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   const { lives, setLives, mergeVolume, explosionVolume } = useGameContext();
 
   const planetArgs = getPlanetArgs(type);
-  const map = useTexture(`./textures/2k_${type}.jpg`);
+  const map = useTexture(`${imgPrefix}textures/2k_${type}.jpg`);
   const outlineThickness = Math.min(0.05 * planetArgs.args[0], 0.1);
 
   const mergeAudio = useMemo(() => {
@@ -285,7 +286,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   );
 }
 function SaturnRing({ size = 0 }) {
-  const ring = useTexture(`./textures/saturn-rings-top.png`);
+  const ring = useTexture(`${imgPrefix}textures/saturn-rings-top.png`);
 
   // Create custom ring geometry
   const geometry = useMemo(() => {
