@@ -1,7 +1,7 @@
 'use client';
 
 import { Physics, useSphere } from '@react-three/cannon';
-import { OrbitControls, Outlines, Ring, Sphere, Stars, useTexture } from '@react-three/drei';
+import { OrbitControls, Outlines, Sphere, Stars, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DoubleSide, RingGeometry, Vector3 } from 'three';
@@ -301,9 +301,10 @@ function SaturnRing({ size = 0 }) {
   }, []);
 
   return (
-    <Ring args={[size + 1.2, size + 3]} rotation={[-Math.PI / 2, 0, 0]} geometry={geometry}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <meshBasicMaterial color='white' transparent side={DoubleSide} map={ring} />
-    </Ring>
+      <ringGeometry args={[size + 1.2, size + 3]} {...geometry} />
+    </mesh>
   );
 }
 
