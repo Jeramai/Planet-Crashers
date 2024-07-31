@@ -262,11 +262,13 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
     };
 
     // Subscribe to position changes
-    api.position.subscribe((pos) => {
+    const positionUpdates = api.position.subscribe((pos) => {
       applyGravityToCenter(pos);
       checkOutsideOfDangerZone(pos);
       updatePlanetPosition(pos);
     });
+
+    return () => positionUpdates();
   }, [api, timestamp, planetArgs.mass, lives, setLives, setShotPlanets]);
 
   return (
