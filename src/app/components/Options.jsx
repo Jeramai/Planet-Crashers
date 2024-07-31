@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useGameContext } from './Context';
 import Button from './Helpers/Button';
+import Slider from './Helpers/Slider';
 import SwipeToConfirmButton from './Helpers/SwipeToConfirmButton';
 
 export default function Options() {
-  const { setGameState, setHighscore } = useGameContext();
+  const {
+    setGameState,
+    setHighscore,
+    audioVolume,
+    explosionVolume,
+    mergeVolume,
+    setAudioVolume,
+    setExplosionVolume,
+    setMergeVolume
+  } = useGameContext();
 
   const [msg, setMsg] = useState('');
 
@@ -26,6 +36,41 @@ export default function Options() {
         <div className='text-4xl font-semibold text-center'>Options</div>
         {msg ? <div className='text-center text-green-400/80 mt-3'>{msg}</div> : null}
       </div>
+
+      <Slider
+        title='Main volume'
+        value={audioVolume}
+        onChange={(e) => {
+          setAudioVolume(e.target.valueAsNumber);
+          localStorage.setItem('audioVolume', e.target.valueAsNumber);
+        }}
+        min={0}
+        max={1}
+        step={0.1}
+      />
+      <Slider
+        title='Explosion volume'
+        value={explosionVolume}
+        onChange={(e) => {
+          setExplosionVolume(e.target.valueAsNumber);
+          localStorage.setItem('explosionVolume', e.target.valueAsNumber);
+        }}
+        min={0}
+        max={1}
+        step={0.1}
+      />
+      <Slider
+        title='Merge volume'
+        value={mergeVolume}
+        onChange={(e) => {
+          setMergeVolume(e.target.valueAsNumber);
+          localStorage.setItem('mergeVolume', e.target.valueAsNumber);
+        }}
+        min={0}
+        max={1}
+        step={0.1}
+      />
+
       <SwipeToConfirmButton onConfirm={clearHighscore} onError={() => setMsg('')}>
         Clear highscore
       </SwipeToConfirmButton>

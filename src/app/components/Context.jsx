@@ -39,6 +39,25 @@ export default function GameContextWrapper({ children }) {
     }
   }, [planetTypeQueue.length]);
 
+  const [audioVolume, setAudioVolume] = useState(0.5);
+  const [explosionVolume, setExplosionVolume] = useState(0.5);
+  const [mergeVolume, setMergeVolume] = useState(0.5);
+
+  // Get audio from localStorage
+  useEffect(() => {
+    let localAudioVolume = localStorage.getItem('audioVolume');
+    if (isNaN(localAudioVolume)) localAudioVolume = 0.5;
+    setAudioVolume(localAudioVolume);
+
+    let localExplosionVolume = localStorage.getItem('explosionVolume');
+    if (isNaN(localExplosionVolume)) localExplosionVolume = 0.5;
+    setExplosionVolume(localExplosionVolume);
+
+    let localMergeVolume = localStorage.getItem('mergeVolume');
+    if (isNaN(localMergeVolume)) localMergeVolume = 0.5;
+    setMergeVolume(localMergeVolume);
+  }, []);
+
   const value = useMemo(
     () => ({
       gameState,
@@ -50,9 +69,15 @@ export default function GameContextWrapper({ children }) {
       planetTypeQueue,
       setPlanetTypeQueue,
       lives,
-      setLives
+      setLives,
+      audioVolume,
+      setAudioVolume,
+      explosionVolume,
+      setExplosionVolume,
+      mergeVolume,
+      setMergeVolume
     }),
-    [gameState, score, planetTypeQueue, lives, highscore]
+    [gameState, score, planetTypeQueue, lives, highscore, audioVolume, explosionVolume, mergeVolume]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
