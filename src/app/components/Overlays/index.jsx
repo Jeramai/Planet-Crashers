@@ -8,7 +8,7 @@ export const imgPrefix = process.env.NODE_ENV === 'production' ? '/Planet-Crashe
 
 export default function Overlays() {
   return (
-    <div className='fixed top-0 left-0 pointer-events-nonea w-full h-full flex flex-col justify-between gap-3 select-none'>
+    <div className='fixed top-0 left-0 pointer-events-none w-full h-full flex flex-col justify-between gap-3 select-none'>
       <Score />
       <div className='flex justify-between items-end py-3 px-1 sm:p-3 gap-3'>
         <div className='w-full hidden sm:flex' />
