@@ -213,7 +213,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   }));
 
   // Aply gravity towards the gravity point
-  const { setLives } = useGameContext();
+  const { lives, setLives } = useGameContext();
   const moonForce = useRef(new Vector3());
   useEffect(() => {
     const applyGravityToCenter = (planetPosition) => {
@@ -236,7 +236,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
         // Play explosion sound effect
         explosionAudio.play();
 
-        setLives((l) => l - 1);
+        setLives(lives - 1);
         setShotPlanets((sp) => sp.filter((_sp) => _sp.timestamp !== timestamp));
       }
     };
@@ -252,7 +252,7 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
       checkOutsideOfDangerZone(pos);
       updatePlanetPosition(pos);
     });
-  }, [api, timestamp, planetArgs.mass, setLives, setShotPlanets]);
+  }, [api, timestamp, planetArgs.mass, lives, setLives, setShotPlanets]);
 
   return (
     <mesh ref={ref}>
