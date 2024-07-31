@@ -31,6 +31,7 @@ export default function Game() {
 
   const [shotPlanets, setShotPlanets] = useState([]);
 
+  const shotAudio = new Audio(`${imgPrefix}sounds/shot.mp3`);
   const onClick = (e) => {
     // On right click or touch end, shoot
     if (e.button === 2) {
@@ -49,6 +50,9 @@ export default function Game() {
         const [, ...rest] = ptq;
         return rest;
       });
+
+      // Play "shot" audio
+      shotAudio.play();
     }
   };
 
@@ -140,6 +144,8 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
   const planetArgs = getPlanetArgs(type);
   const map = useTexture(`./textures/2k_${type}.jpg`);
   const outlineThickness = Math.min(0.05 * planetArgs.args[0], 0.1);
+  const mergeAudio = new Audio(`${imgPrefix}sounds/merge.mp3`);
+  const explosionAudio = new Audio(`${imgPrefix}sounds/explosion.mp3`);
 
   // Get planet shoot position
   const camera = useThree((state) => state.camera);
@@ -179,6 +185,9 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
               type: Object.values(planetTypes)[bodyPlanetTypeIndex - 1],
               position: [worldPosition.x ?? 0, worldPosition.y ?? 0, worldPosition.z ?? 0]
             };
+
+            // Play merge sound effect
+            mergeAudio.play();
             return [...newSP, newPlanet];
           }
         }
@@ -224,6 +233,9 @@ function ShootablePlanet({ timestamp, setShotPlanets, setCollisionPairs, type = 
       const distance = planetPosVector3.distanceTo(dangerZoneCenter);
 
       if (distance > dangerZoneRadius) {
+        // Play explosion sound effect
+        explosionAudio.play();
+
         setLives((l) => l - 1);
         setShotPlanets((sp) => sp.filter((_sp) => _sp.timestamp !== timestamp));
       }
