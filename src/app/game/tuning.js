@@ -14,9 +14,11 @@ export const GRACE_SECONDS = 3;
 
 export const GRAVITY = 6.5;
 
-/* Planets are launched from the boundary itself, not from the camera, so the
-   flight is identical however far the player has zoomed out. */
-export const SPAWN_RADIUS = DANGER_START + 2;
+/* Launched from just outside the field, wherever the field currently is. A fixed
+   spawn ring left every late shot coasting in from far outside the boundary,
+   unharmed, while a settled planet a hair outside was already on the clock. */
+export const LAUNCH_GAP = 1.6;
+export const spawnRadiusAt = (shots) => dangerRadiusAt(shots) + LAUNCH_GAP;
 export const SHOT_SPEED = 6.5;
 export const SHOT_COOLDOWN_MS = 220;
 

@@ -29,7 +29,7 @@ const TAP_SLOP_PX = 8;
 const TAP_MS = 450;
 
 export default function Scene() {
-  const { gameState, queue, runId } = useGame();
+  const { gameState, queue, runId, shots } = useGame();
   const still = useReducedMotion();
   const playing = gameState === GameState.Playing;
   // The board stays on screen while paused and after the run, so the card sits
@@ -81,7 +81,7 @@ export default function Scene() {
           )}
         </ShakeGroup>
 
-        {playing ? <Aim type={queue[0].type} /> : null}
+        {playing ? <Aim type={queue[0].type} shots={shots} /> : null}
         <Preload all />
       </Suspense>
 

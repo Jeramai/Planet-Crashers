@@ -52,7 +52,7 @@ export default function DangerShell({ flags, boundary }) {
   useFrame((state, delta) => {
     // Drawn at the start radius and scaled, so the field closing in is one number.
     if (shell.current) {
-      const target = boundary.current / DANGER_START;
+      const target = boundary / DANGER_START;
       shell.current.scale.setScalar(shell.current.scale.x + (target - shell.current.scale.x) * Math.min(1, delta * 3));
     }
     if (!material.current) return;

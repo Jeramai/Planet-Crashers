@@ -1,5 +1,6 @@
 'use client';
 
+import { createAudio } from '../sound-context';
 import { BEATS_PER_CHORD, bellNote, chordNotes, composeScore, midiToHz, subNote } from './compose';
 
 const LOOKAHEAD_MS = 60;
@@ -79,10 +80,10 @@ export class SpaceScore {
     if (this.playing) return;
 
     if (!this.ctx) {
-      const Ctor = window.AudioContext ?? window.webkitAudioContext;
-      if (!Ctor) return;
-      this.ctx = new Ctor();
-      this.build();
+      const audio = createAudio();
+      if (!audio) return;
+      this.ctx = audio.ctx;
+      this.build(audio.music);
     }
 
     await this.ctx.resume();
@@ -98,20 +99,12 @@ export class SpaceScore {
     void this.ctx?.suspend();
   }
 
-  build() {
+  build(out) {
     const ctx = this.ctx;
-
-    const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -8;
-    limiter.knee.value = 6;
-    limiter.ratio.value = 12;
-    limiter.attack.value = 0.004;
-    limiter.release.value = 0.25;
-    limiter.connect(ctx.destination);
 
     this.master = ctx.createGain();
     this.master.gain.value = this.volume;
-    this.master.connect(limiter);
+    this.master.connect(out);
 
     this.dry = ctx.createGain();
     this.dry.gain.value = 0.8;
