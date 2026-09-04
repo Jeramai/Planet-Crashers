@@ -4,7 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { AdditiveBlending, Color, DoubleSide, Vector3 } from 'three';
 import { specOf } from '../../game/planets';
-import { SPAWN_RADIUS } from '../../game/tuning';
+import { spawnRadiusAt } from '../../game/tuning';
 
 const DOTS = 18;
 const ZERO = new Vector3(0, 0, 0);
@@ -16,7 +16,7 @@ const TRAIL_FADES = Float32Array.from({ length: DOTS }, (_, i) => 1 - i / DOTS);
 
 /* A camera-facing ring at the exact size of the incoming planet. A solid ghost —
    or a fresnel shell this close to the lens — just paints over the pile. */
-export default function Aim({ type }) {
+export default function Aim({ type, shots }) {
   const spec = specOf(type);
   const camera = useThree((state) => state.camera);
 
@@ -29,7 +29,7 @@ export default function Aim({ type }) {
 
   useFrame(() => {
     // Matches the launch exactly: on the boundary, on the camera's own ray.
-    muzzle.copy(camera.position).normalize().multiplyScalar(SPAWN_RADIUS);
+    muzzle.copy(camera.position).normalize().multiplyScalar(spawnRadiusAt(shots));
     if (reticle.current) {
       reticle.current.position.copy(muzzle);
       reticle.current.quaternion.copy(camera.quaternion);

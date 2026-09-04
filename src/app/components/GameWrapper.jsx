@@ -12,7 +12,7 @@ import Loading from './ui/Loading';
 import Menu from './ui/Menu';
 import Options from './ui/Options';
 import Paused from './ui/Paused';
-import Music from './Music';
+import Audio from './Audio';
 
 const LOADING_FALLBACK_MS = 4000;
 
@@ -45,7 +45,7 @@ export default function GameWrapper() {
   return (
     <>
       <Scene />
-      <Music />
+      <Audio />
 
       {gameState === GameState.Playing ? <Hud /> : null}
       {gameState === GameState.Menu ? <Menu /> : null}

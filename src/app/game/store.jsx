@@ -54,6 +54,7 @@ export default function GameProvider({ children }) {
   const [queue, setQueue] = useState(freshQueue);
   const [combo, setCombo] = useState(0);
   const [runId, setRunId] = useState(0);
+  const [shots, setShots] = useState(0);
   const livesLeft = useRef(START_LIVES);
   const scoreSoFar = useRef(0);
   const bestSoFar = useRef(0);
@@ -92,13 +93,16 @@ export default function GameProvider({ children }) {
   }, []);
 
   const takeFromQueue = useCallback(() => {
-    setQueue((q) => [...q.slice(1), deal()]);
+    const next = deal();
+    setQueue((q) => [...q.slice(1), next]);
+    setShots((n) => n + 1);
   }, []);
 
   const startRun = useCallback(() => {
     livesLeft.current = START_LIVES;
     scoreSoFar.current = 0;
     setRunId((n) => n + 1);
+    setShots(0);
     setScore(0);
     setLives(START_LIVES);
     setQueue(freshQueue());
@@ -117,6 +121,7 @@ export default function GameProvider({ children }) {
       combo,
       setCombo,
       runId,
+      shots,
       volumes,
       setVolume,
       addScore,
@@ -124,7 +129,22 @@ export default function GameProvider({ children }) {
       takeFromQueue,
       startRun
     }),
-    [gameState, score, highscore, lives, queue, combo, runId, volumes, setVolume, addScore, loseLife, takeFromQueue, startRun]
+    [
+      gameState,
+      score,
+      highscore,
+      lives,
+      queue,
+      combo,
+      runId,
+      shots,
+      volumes,
+      setVolume,
+      addScore,
+      loseLife,
+      takeFromQueue,
+      startRun
+    ]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

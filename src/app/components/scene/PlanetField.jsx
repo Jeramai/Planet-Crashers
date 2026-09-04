@@ -12,15 +12,13 @@ import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
-  DANGER_MIN,
-  DANGER_START,
   dangerRadiusAt,
   GRACE_SECONDS,
   GRAVITY,
   LOST_DISTANCE,
   MAX_SPEED,
   MERGE_VELOCITY_KEEP,
-  SPAWN_RADIUS,
+  spawnRadiusAt,
   SHOT_COOLDOWN_MS,
   SHOT_SPEED
 } from '../../game/tuning';
@@ -34,7 +32,7 @@ import Planet from './Planet';
 let nextId = 1;
 
 export default function PlanetField() {
-  const { gameState, addScore, loseLife, takeFromQueue, queue, volumes, setCombo } = useGame();
+  const { gameState, addScore, loseLife, takeFromQueue, queue, shots, volumes, setCombo } = useGame();
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
@@ -48,8 +46,6 @@ export default function PlanetField() {
   const lastShot = useRef(0);
   const lastMerge = useRef(0);
   const comboRef = useRef(0);
-  const shots = useRef(0);
-  const boundary = useRef(DANGER_START);
   const alerting = useRef(false);
 
   const running = gameState === GameState.Playing;
@@ -128,7 +124,7 @@ export default function PlanetField() {
       consumed.current.delete(idB);
 
       addScore(points);
-      playSound('merge', volumes.merge);
+      playSound('merge', volumes.merge, spec.radius);
       emit(GameEvent.Merge, { at, radius: spec.radius, color: spec.air?.color ?? '#cfe6ff' });
       emit(GameEvent.Popup, { at, text: `+${points}`, combo: comboRef.current });
       emit(GameEvent.Shake, { trauma: Math.min(0.5, 0.14 + spec.radius * 0.05) });
@@ -149,15 +145,12 @@ export default function PlanetField() {
       const now = performance.now();
       if (now - lastShot.current < SHOT_COOLDOWN_MS) return;
       lastShot.current = now;
-      shots.current += 1;
-      boundary.current = dangerRadiusAt(shots.current);
-      // The score tightens with the field.
-      emit(GameEvent.Tension, (DANGER_START - boundary.current) / (DANGER_START - DANGER_MIN));
 
       AIM.copy(camera.position).normalize();
       const { x, y, z } = AIM;
       const spec = specOf(queue[0].type);
-      const spawn = [x * SPAWN_RADIUS, y * SPAWN_RADIUS, z * SPAWN_RADIUS];
+      const muzzle = spawnRadiusAt(shots);
+      const spawn = [x * muzzle, y * muzzle, z * muzzle];
 
       // Spawning inside another body makes Rapier fling both of them out of the
       // well, so a blocked muzzle simply does not fire.
@@ -180,11 +173,15 @@ export default function PlanetField() {
       write((list) => [...list, launched]);
 
       takeFromQueue();
-      playSound('shot', volumes.shot);
+      playSound('shot', volumes.shot, spec.radius);
     };
 
     return on(GameEvent.Shoot, fire);
-  }, [running, camera, queue, takeFromQueue, volumes.shot, write]);
+  }, [running, camera, queue, shots, takeFromQueue, volumes.shot, write]);
+
+  // Derived, not stored: the field is a function of how many shots have been
+  // fired, and useFrame is re-registered with the current value on every render.
+  const boundary = dangerRadiusAt(shots);
 
   useFrame((_, rawDelta) => {
     if (!running) return;
@@ -222,14 +219,16 @@ export default function PlanetField() {
       // top of the chain genuinely dangerous.
       // The clock only starts once a planet has been inside. A launch begins
       // outside the field, and nobody should lose a life for the flight in.
-      const inside = distance + specOf(planet.type).radius <= boundary.current;
+      const inside = distance + specOf(planet.type).radius <= boundary;
       if (inside) armed.current.add(planet.id);
 
       // A planet that overshoots and falls back is safe. Only one that stays out
       // for the whole grace window costs a life.
       const held = !inside && armed.current.has(planet.id) ? (outside.current.get(planet.id) ?? 0) + delta : 0;
       outside.current.set(planet.id, held);
-      flags.current.set(planet.id, Math.min(1, held / GRACE_SECONDS));
+      // A planet on the clock is visible from the first frame, not after it has
+      // already burned a third of its grace.
+      flags.current.set(planet.id, held > 0 ? Math.min(1, 0.32 + (0.68 * held) / GRACE_SECONDS) : 0);
 
       if (held >= GRACE_SECONDS) {
         doomed.push({ id: planet.id, at: [at.x, at.y, at.z], type: planet.type, silent: false });
@@ -249,8 +248,9 @@ export default function PlanetField() {
 
     doomed.forEach(({ at, type, silent }) => {
       if (silent) return;
-      playSound('explosion', volumes.explosion);
-      emit(GameEvent.Explode, { at, radius: specOf(type).radius, color: '#ff7a2a' });
+      const lost = specOf(type).radius;
+      playSound('explosion', volumes.explosion, lost);
+      emit(GameEvent.Explode, { at, radius: lost, color: '#ff7a2a' });
       emit(GameEvent.Shake, { trauma: 0.55 });
       loseLife();
     });
