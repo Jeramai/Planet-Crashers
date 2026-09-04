@@ -3,6 +3,7 @@ export const GameState = {
   Playing: 'GAME',
   Paused: 'PAUSED',
   Options: 'OPTIONS',
+  Rules: 'RULES',
   Over: 'GAME_OVER'
 };
 

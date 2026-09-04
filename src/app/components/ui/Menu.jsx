@@ -6,7 +6,7 @@ import Button from './Button';
 import Chain from './Chain';
 
 export default function Menu() {
-  const { highscore, startRun, setGameState } = useGame();
+  const { highscore, startRun, setGameState, showRules } = useGame();
 
   return (
     <Shell>
@@ -26,6 +26,7 @@ export default function Menu() {
         <Button variant='primary' onClick={startRun}>
           Start run
         </Button>
+        <Button onClick={() => showRules(GameState.Menu)}>How to play</Button>
         <Button onClick={() => setGameState(GameState.Options)}>Options</Button>
       </div>
 

@@ -57,6 +57,7 @@ export default function GameProvider({ children }) {
   const [shots, setShots] = useState(0);
   const [contentVolume, setContentVolume] = useState(0);
   const livesLeft = useRef(START_LIVES);
+  const beforeRules = useRef(GameState.Menu);
   const scoreSoFar = useRef(0);
   const bestSoFar = useRef(0);
 
@@ -99,6 +100,15 @@ export default function GameProvider({ children }) {
     setShots((n) => n + 1);
   }, []);
 
+  // Reading the rules should put you back where you were, and pause the run
+  // while you read, which falls out of the state machine for free.
+  const showRules = useCallback((from) => {
+    beforeRules.current = from;
+    setGameState(GameState.Rules);
+  }, []);
+
+  const closeRules = useCallback(() => setGameState(beforeRules.current), []);
+
   const startRun = useCallback(() => {
     livesLeft.current = START_LIVES;
     scoreSoFar.current = 0;
@@ -135,7 +145,9 @@ export default function GameProvider({ children }) {
       addScore,
       loseLife,
       takeFromQueue,
-      startRun
+      startRun,
+      showRules,
+      closeRules
     }),
     [
       gameState,
@@ -153,7 +165,9 @@ export default function GameProvider({ children }) {
       addScore,
       loseLife,
       takeFromQueue,
-      startRun
+      startRun,
+      showRules,
+      closeRules
     ]
   );
 

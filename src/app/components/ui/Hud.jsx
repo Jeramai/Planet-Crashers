@@ -24,7 +24,7 @@ function Orb({ type, size }) {
 }
 
 export default function Hud() {
-  const { score, highscore, lives, queue, combo, setGameState } = useGame();
+  const { score, highscore, lives, queue, combo, setGameState, showRules } = useGame();
   const [danger, setDanger] = useState(false);
 
   useEffect(() => on(GameEvent.Danger, setDanger), []);
@@ -66,24 +66,30 @@ export default function Hud() {
           ) : null}
         </div>
 
-        <button
-          type='button'
-          onClick={() => setGameState(GameState.Paused)}
-          className='chip pointer-events-auto ml-auto flex size-11 items-center justify-center'
-          aria-label='Pause'
-        >
-          <span className='flex gap-1'>
-            <span className='block h-4 w-1 rounded-full bg-white/80' />
-            <span className='block h-4 w-1 rounded-full bg-white/80' />
-          </span>
-        </button>
+        <div className='ml-auto flex gap-2'>
+          <button
+            type='button'
+            onClick={() => showRules(GameState.Playing)}
+            className='chip pointer-events-auto flex size-11 items-center justify-center font-serif text-lg leading-none font-bold text-white/80'
+            aria-label='How to play'
+          >
+            i
+          </button>
+          <button
+            type='button'
+            onClick={() => setGameState(GameState.Paused)}
+            className='chip pointer-events-auto flex size-11 items-center justify-center'
+            aria-label='Pause'
+          >
+            <span className='flex gap-1'>
+              <span className='block h-4 w-1 rounded-full bg-white/80' />
+              <span className='block h-4 w-1 rounded-full bg-white/80' />
+            </span>
+          </button>
+        </div>
       </div>
 
       <div className='flex items-end justify-end gap-3'>
-        <p className='chip mr-auto hidden max-w-64 text-[0.7rem] leading-relaxed text-white/55 sm:block'>
-          Tap to launch. Drag to orbit. Scroll to zoom. Keep every planet inside the grid.
-        </p>
-
         <div className='chip flex items-end gap-4 py-3'>
           <div className='flex flex-col items-center gap-1.5'>
             {currentType ? <Orb type={currentType} size={64} /> : <span className='size-16' />}
