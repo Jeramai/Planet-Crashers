@@ -14,7 +14,7 @@ const WARNING = new Color('#ff2d2d');
 
 export default function PlanetVisual({ type, spin = 0.08, flags = null, flagKey = null }) {
   const spec = specOf(type);
-  const map = useTexture(textureUrl(`2k_${type}.jpg`), setUpTexture);
+  const map = useTexture(textureUrl(`${type}.webp`), setUpTexture);
 
   const mesh = useRef(null);
   const material = useRef(null);
@@ -56,7 +56,7 @@ export default function PlanetVisual({ type, spin = 0.08, flags = null, flagKey 
 }
 
 function SaturnRing({ radius }) {
-  const map = useTexture(textureUrl('saturn-rings-top.png'), setUpTexture);
+  const map = useTexture(textureUrl('saturn-rings-top.webp'), setUpTexture);
 
   // The stock ring UVs run around the ring, not across it, so the bands never
   // show until the coordinates are re-mapped radially.

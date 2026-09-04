@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { textureUrl } from '../../game/assets';
+import { thumbUrl } from '../../game/assets';
 import { GameEvent, on } from '../../game/events';
 import { specOf } from '../../game/planets';
 import { useGame } from '../../game/store';
@@ -17,14 +17,7 @@ const ORB_SHADING = 'inset -7px -7px 16px rgba(0,0,0,0.8), inset 4px 4px 12px rg
 function Orb({ type, size }) {
   return (
     <span className='relative block shrink-0 overflow-hidden rounded-full' style={{ width: size, height: size }}>
-      <Image
-        src={textureUrl(`2k_${type}.jpg`)}
-        alt={type}
-        width={size}
-        height={size}
-        className='size-full object-cover'
-        unoptimized
-      />
+      <Image src={thumbUrl(type)} alt={type} width={size} height={size} className='size-full object-cover' unoptimized />
       <span className='absolute inset-0 rounded-full' style={{ boxShadow: ORB_SHADING }} />
     </span>
   );

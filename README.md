@@ -33,6 +33,16 @@ push to `main`, and a green build deploys to GitHub Pages.
   with the colour map doubling as a bump map, a fresnel atmosphere shell per
   planet, and an ACES filmic tone map with bloom.
 
+## Textures
+
+The sphere maps are WebP at 1280x640, with 256x128 thumbnails for the HUD, which
+draws them at 26 to 64 pixels. Regenerate from the originals with:
+
+```bash
+cwebp -q 82 -m 6 -resize 1280 640 <source>.jpg -o public/textures/<name>.webp
+cwebp -q 78 -m 6 -resize 256 128  <source>.jpg -o public/textures/thumbs/<name>.webp
+```
+
 ## Credits
 
 Planet textures: https://www.solarsystemscope.com/textures/

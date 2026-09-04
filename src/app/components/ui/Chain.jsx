@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { textureUrl } from '../../game/assets';
+import { thumbUrl } from '../../game/assets';
 import { MERGE_CHAIN } from '../../game/planets';
 
 export default function Chain() {
@@ -10,7 +10,7 @@ export default function Chain() {
       {MERGE_CHAIN.map((type, i) => (
         <span key={type} className='flex items-center gap-1.5'>
           <Image
-            src={textureUrl(`2k_${type}.jpg`)}
+            src={thumbUrl(type)}
             alt={type}
             width={26}
             height={26}
