@@ -26,6 +26,9 @@ push to `main`, and a green build deploys to GitHub Pages.
   and the boundary timer. Planets are dumb bodies; they do not run their own
   physics subscriptions.
 - Every number that changes how the game feels lives in `game/tuning.js`.
+- The music is generated, not a file. `game/music/compose.js` writes a piece
+  from a seed; `game/music/player.js` plays it in WebAudio and follows one
+  tension value that tracks the containment field.
 - The render path is physically lit: one directional star, `meshStandardMaterial`
   with the colour map doubling as a bump map, a fresnel atmosphere shell per
   planet, and an ACES filmic tone map with bloom.
@@ -33,3 +36,6 @@ push to `main`, and a green build deploys to GitHub Pages.
 ## Credits
 
 Planet textures: https://www.solarsystemscope.com/textures/
+
+The music and the nebula are generated at runtime — no audio or image files
+behind either.
