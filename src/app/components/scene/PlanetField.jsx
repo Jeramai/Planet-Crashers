@@ -12,7 +12,8 @@ import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
-  DANGER_RADIUS,
+  DANGER_START,
+  dangerRadiusAt,
   GRACE_SECONDS,
   GRAVITY,
   LOST_DISTANCE,
@@ -36,6 +37,7 @@ export default function PlanetField() {
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
+  const collide = useRef(null);
   const planetsRef = useRef([]);
   const bodies = useRef(new Map());
   const flags = useRef(new Map());
@@ -45,6 +47,8 @@ export default function PlanetField() {
   const lastShot = useRef(0);
   const lastMerge = useRef(0);
   const comboRef = useRef(0);
+  const shots = useRef(0);
+  const boundary = useRef(DANGER_START);
   const alerting = useRef(false);
 
   const running = gameState === GameState.Playing;
@@ -132,12 +136,20 @@ export default function PlanetField() {
   );
 
   useEffect(() => {
+    collide.current = handleCollide;
+  }, [handleCollide]);
+
+  const onCollide = useCallback((id, other) => collide.current?.(id, other), []);
+
+  useEffect(() => {
     if (!running) return;
 
     const fire = () => {
       const now = performance.now();
       if (now - lastShot.current < SHOT_COOLDOWN_MS) return;
       lastShot.current = now;
+      shots.current += 1;
+      boundary.current = dangerRadiusAt(shots.current);
 
       AIM.copy(camera.position).normalize();
       const { x, y, z } = AIM;
@@ -202,9 +214,12 @@ export default function PlanetField() {
         body.applyImpulse(PULL, true);
       }
 
-      // The clock only starts once a planet has been inside. A launch begins on
-      // the boundary, and nobody should lose a life for the flight in.
-      const inside = distance <= DANGER_RADIUS;
+      // Measured to the planet's surface, not its centre: a body poking through
+      // the field is exactly what the player sees, and it makes the giants at the
+      // top of the chain genuinely dangerous.
+      // The clock only starts once a planet has been inside. A launch begins
+      // outside the field, and nobody should lose a life for the flight in.
+      const inside = distance + specOf(planet.type).radius <= boundary.current;
       if (inside) armed.current.add(planet.id);
 
       // A planet that overshoots and falls back is safe. Only one that stays out
@@ -241,11 +256,11 @@ export default function PlanetField() {
   });
 
   return (
-    <Physics gravity={[0, 0, 0]} timeStep='vary' paused={!running}>
+    <Physics gravity={[0, 0, 0]} timeStep={1 / 60} paused={!running}>
       {planets.map((planet) => (
-        <Planet key={planet.id} {...planet} bodies={bodies} flags={flags} onCollide={handleCollide} />
+        <Planet key={planet.id} {...planet} bodies={bodies} flags={flags} onCollide={onCollide} />
       ))}
-      <DangerShell flags={flags} />
+      <DangerShell flags={flags} boundary={boundary} />
     </Physics>
   );
 }

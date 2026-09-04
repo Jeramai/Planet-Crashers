@@ -2,14 +2,21 @@ import { Vector3 } from 'three';
 
 /* One place for every number that changes how the game feels. */
 
-export const DANGER_RADIUS = 9;
-export const GRACE_SECONDS = 4;
+/* The field closes in. Central gravity means merges always keep pace with the
+   shots, so a fixed boundary is never reached and the run cannot end. A field
+   that contracts turns every run into a clock the player races. */
+export const DANGER_START = 9;
+export const DANGER_MIN = 4.2;
+export const DANGER_SHRINK_PER_SHOT = 0.075;
+
+export const dangerRadiusAt = (shots) => Math.max(DANGER_MIN, DANGER_START - shots * DANGER_SHRINK_PER_SHOT);
+export const GRACE_SECONDS = 3;
 
 export const GRAVITY = 6.5;
 
 /* Planets are launched from the boundary itself, not from the camera, so the
    flight is identical however far the player has zoomed out. */
-export const SPAWN_RADIUS = DANGER_RADIUS + 2;
+export const SPAWN_RADIUS = DANGER_START + 2;
 export const SHOT_SPEED = 6.5;
 export const SHOT_COOLDOWN_MS = 220;
 
