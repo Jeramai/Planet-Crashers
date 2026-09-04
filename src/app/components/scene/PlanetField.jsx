@@ -7,13 +7,12 @@ import { Vector3 } from 'three';
 import { playSound } from '../../game/audio';
 import { emit, GameEvent, on } from '../../game/events';
 import { nextId } from '../../game/ids';
-import { nextInChain, specOf } from '../../game/planets';
+import { nextInChain, specOf, volumeOf } from '../../game/planets';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
-  fieldRadiusAt,
   GRACE_SECONDS,
   WARNING_AFTER,
   GRAVITY,
@@ -22,7 +21,7 @@ import {
   MERGE_VELOCITY_KEEP,
   LAUNCH_STEP,
   LAUNCH_STEPS_MAX,
-  spawnRadiusAt,
+  spawnRadiusFor,
   SHOT_COOLDOWN_MS,
   SHOT_SPEED
 } from '../../game/tuning';
@@ -34,7 +33,7 @@ const PULL = new Vector3();
 import Planet from './Planet';
 
 export default function PlanetField() {
-  const { gameState, addScore, loseLife, takeFromQueue, queue, shots, score, volumes, setCombo } = useGame();
+  const { gameState, addScore, loseLife, takeFromQueue, queue, field, setContentVolume, volumes, setCombo } = useGame();
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
@@ -51,10 +50,15 @@ export default function PlanetField() {
 
   const running = gameState === GameState.Playing;
 
-  const write = useCallback((update) => {
-    planetsRef.current = update(planetsRef.current);
-    setPlanets(planetsRef.current);
-  }, []);
+  const write = useCallback(
+    (update) => {
+      planetsRef.current = update(planetsRef.current);
+      setPlanets(planetsRef.current);
+      // Published on change, not per frame: the field is sized to this.
+      setContentVolume(planetsRef.current.reduce((sum, planet) => sum + volumeOf(planet.type), 0));
+    },
+    [setContentVolume]
+  );
 
   const drop = useCallback(
     (ids) => {
@@ -162,7 +166,7 @@ export default function PlanetField() {
           return gap < specOf(other.type).radius + spec.radius + 0.4;
         });
 
-      let muzzle = spawnRadiusAt(shots, score);
+      let muzzle = spawnRadiusFor(field);
       let spawn = [x * muzzle, y * muzzle, z * muzzle];
       for (let step = 0; step < LAUNCH_STEPS_MAX && occupied(spawn); step++) {
         muzzle += LAUNCH_STEP;
@@ -183,11 +187,7 @@ export default function PlanetField() {
     };
 
     return on(GameEvent.Shoot, fire);
-  }, [running, camera, queue, shots, score, takeFromQueue, volumes.shot, write]);
-
-  // Derived, not stored: the field is a function of shots fired and points
-  // earned, and useFrame is re-registered with the current value every render.
-  const boundary = fieldRadiusAt(shots, score);
+  }, [running, camera, queue, field, takeFromQueue, volumes.shot, write]);
 
   useFrame((_, rawDelta) => {
     if (!running) return;
@@ -225,7 +225,7 @@ export default function PlanetField() {
       // read as arbitrary, and there is no arming latch any more: a launch
       // starts 1.6 units out and is inside within a quarter of a second, so the
       // rule is simply "half out for three seconds, continuously".
-      const inside = distance <= boundary;
+      const inside = distance <= field;
       const held = inside ? 0 : (outside.current.get(planet.id) ?? 0) + delta;
       outside.current.set(planet.id, held);
       // Visible the moment it means anything, which is once a launch has had
@@ -267,7 +267,7 @@ export default function PlanetField() {
       {planets.map((planet) => (
         <Planet key={planet.id} {...planet} bodies={bodies} flags={flags} onCollide={onCollide} />
       ))}
-      <DangerShell flags={flags} boundary={boundary} />
+      <DangerShell flags={flags} boundary={field} />
     </Physics>
   );
 }

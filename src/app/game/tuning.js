@@ -2,26 +2,35 @@ import { Vector3 } from 'three';
 
 /* One place for every number that changes how the game feels. */
 
-/* The field answers to progress, not to the clock. Every shot closes it in and
-   every point earned opens it back up, so merging well buys room and spamming
-   does not. It also starts tight, because a field the early pile cannot get
-   near is a field the early game can ignore. */
+/* The field is sized to what it holds.
+
+   A fixed radius is loose when the field is nearly empty and brutal when it is
+   full, which is why the first fifty shots used to carry no consequence at all.
+   Sizing it from the volume inside keeps it tight at every stage, so the slack
+   it allows is the only dial — and the slack decays.
+
+   The numbers come from measurement. Across a run the furthest planet centre
+   sits at 1.0 to 1.2x the radius of a sphere holding the same volume packed, so
+   slack above about 1.2 is breathing room and slack below 1.0 is a field the
+   pile is already spilling out of. Starting slack is deliberately close to that
+   line: the field should look full from the first handful of shots. */
+export const PACKING = 0.6;
+export const SLACK_START = 1.35;
+export const SLACK_MIN = 0.85;
+export const SLACK_PER_SHOT = 0.008;
+export const SLACK_PER_ROOT_POINT = 0.0028;
+
+export const FIELD_MIN = 1.5;
 export const FIELD_MAX = 7.5;
-export const FIELD_START = 5.6;
-export const FIELD_MIN = 2.8;
-export const FIELD_SHRINK_PER_SHOT = 0.1;
-/* Diminishing, on the root of the score. Points buy room, so a run that merges
-   well is given the space to keep going, but they buy less and less of it, so
-   every run still ends. Paid linearly, a good run simply outran the shrink. */
-export const FIELD_EXPAND_PER_ROOT = 0.115;
 
-export const fieldRadiusAt = (shots, score) =>
-  Math.min(
-    FIELD_MAX,
-    Math.max(FIELD_MIN, FIELD_START - shots * FIELD_SHRINK_PER_SHOT + Math.sqrt(Math.max(0, score)) * FIELD_EXPAND_PER_ROOT)
-  );
+export const contentRadius = (volume) => (Math.max(0, volume) / PACKING) ** (1 / 3);
 
-export const GRACE_SECONDS = 3;
+export function fieldRadius(volume, shots, score) {
+  const slack = Math.max(SLACK_MIN, SLACK_START - shots * SLACK_PER_SHOT + Math.sqrt(Math.max(0, score)) * SLACK_PER_ROOT_POINT);
+  return Math.min(FIELD_MAX, Math.max(FIELD_MIN, contentRadius(volume) * slack));
+}
+
+export const GRACE_SECONDS = 2.4;
 
 /* A launch is half outside on its way in — a quarter of a second usually, up to
    about eight tenths when it has to shoulder into a full field. The clock still
@@ -38,7 +47,7 @@ export const GRAVITY = 6.5;
 export const LAUNCH_GAP = 1.6;
 export const LAUNCH_STEP = 0.7;
 export const LAUNCH_STEPS_MAX = 12;
-export const spawnRadiusAt = (shots, score) => fieldRadiusAt(shots, score) + LAUNCH_GAP;
+export const spawnRadiusFor = (field) => field + LAUNCH_GAP;
 export const SHOT_SPEED = 6.5;
 export const SHOT_COOLDOWN_MS = 220;
 

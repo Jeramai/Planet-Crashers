@@ -26,8 +26,11 @@ export const MERGE_CHAIN = [
   PlanetType.Sun
 ];
 
-/* Only the small end is ever dealt. Everything above Venus has to be earned. */
-export const DEALT = MERGE_CHAIN.slice(0, 5);
+/* Only the small end is ever dealt. Everything above Earth has to be earned.
+   Five types dealt pairs so often that the pile merged itself away as fast as it
+   grew, so the field had nothing to press against and the first fifty shots
+   carried no consequence at all. */
+export const DEALT = MERGE_CHAIN.slice(0, 6);
 
 const SPEC = {
   [PlanetType.Moon]: { radius: 0.3, points: 1, roughness: 0.95, bump: 0.03 },
@@ -98,6 +101,12 @@ export const specOf = (type) => SPEC[type] ?? SPEC[PlanetType.Moon];
 export function nextInChain(type) {
   const i = MERGE_CHAIN.indexOf(type);
   return i >= 0 && i < MERGE_CHAIN.length - 1 ? MERGE_CHAIN[i + 1] : null;
+}
+
+/* What a planet takes up. The field is sized from the sum of these. */
+export function volumeOf(type) {
+  const r = specOf(type).radius;
+  return r * r * r;
 }
 
 /* Volume-proportional, so a Jupiter falls inward like a Jupiter without the 318x real ratio. */

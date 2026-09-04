@@ -4,11 +4,11 @@ import { useEffect, useRef } from 'react';
 import { primeSounds } from '../game/audio';
 import { SpaceScore } from '../game/music/player';
 import { useGame } from '../game/store';
-import { FIELD_MIN, FIELD_START, fieldRadiusAt } from '../game/tuning';
+import { FIELD_MAX, FIELD_MIN } from '../game/tuning';
 
 /* Everything that needs an AudioContext starts here, on one gesture. */
 export default function Audio() {
-  const { volumes, runId, shots, score } = useGame();
+  const { volumes, runId, field } = useGame();
   const engine = useRef(null);
 
   useEffect(() => {
@@ -39,9 +39,10 @@ export default function Audio() {
 
   // The music tightens with the field, which now answers to how the run is going.
   useEffect(() => {
-    const squeeze = (FIELD_START - fieldRadiusAt(shots, score)) / (FIELD_START - FIELD_MIN);
+    // Tight field, tense score.
+    const squeeze = 1 - (field - FIELD_MIN) / (FIELD_MAX - FIELD_MIN);
     engine.current?.setTension(Math.min(1, Math.max(0, squeeze)));
-  }, [shots, score]);
+  }, [field]);
 
   // A new run gets a new piece.
   useEffect(() => {
