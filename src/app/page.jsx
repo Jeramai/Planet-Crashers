@@ -1,14 +1,12 @@
-import GameContextWrapper from './components/Context';
+import GameProvider from './game/store';
 import GameWrapper from './components/GameWrapper';
 
 export default function Home() {
   return (
     <main className='h-full w-full'>
-      <div id='stars' />
-
-      <GameContextWrapper>
+      <GameProvider>
         <GameWrapper />
-      </GameContextWrapper>
+      </GameProvider>
     </main>
   );
 }
