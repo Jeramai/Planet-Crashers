@@ -3,9 +3,9 @@
 import { Html } from '@react-three/drei';
 import { useEffect, useState } from 'react';
 import { GameEvent, on } from '../../game/events';
+import { nextId } from '../../game/ids';
 
 const LIFE_MS = 1100;
-let popupId = 1;
 
 export default function Popups() {
   const [popups, setPopups] = useState([]);
@@ -13,7 +13,7 @@ export default function Popups() {
   useEffect(
     () =>
       on(GameEvent.Popup, ({ at, text, combo }) => {
-        const id = popupId++;
+        const id = nextId();
         setPopups((list) => [...list, { id, at, text, combo }]);
         window.setTimeout(() => setPopups((list) => list.filter((p) => p.id !== id)), LIFE_MS);
       }),

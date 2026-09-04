@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { nextId } from './ids';
 import { DEALT, PlanetType } from './planets';
 import { GameState, START_LIVES } from './state';
 
@@ -39,9 +40,7 @@ function readHighscore() {
   }
 }
 
-let nextQueueId = 1;
-
-const deal = (type) => ({ id: nextQueueId++, type: type ?? DEALT[Math.floor(Math.random() * DEALT.length)] });
+const deal = (type) => ({ id: nextId(), type: type ?? DEALT[Math.floor(Math.random() * DEALT.length)] });
 const freshQueue = () => [deal(PlanetType.Moon), ...Array.from({ length: QUEUE_AHEAD - 1 }, () => deal())];
 
 const GameContext = createContext(null);
