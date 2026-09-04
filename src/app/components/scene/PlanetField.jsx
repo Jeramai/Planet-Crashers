@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import { playSound } from '../../game/audio';
 import { emit, GameEvent, on } from '../../game/events';
+import { nextId } from '../../game/ids';
 import { nextInChain, specOf } from '../../game/planets';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
@@ -14,6 +15,7 @@ import {
   COMBO_WINDOW_MS,
   dangerRadiusAt,
   GRACE_SECONDS,
+  WARNING_AFTER,
   GRAVITY,
   LOST_DISTANCE,
   MAX_SPEED,
@@ -28,8 +30,6 @@ import DangerShell from './DangerShell';
 const AIM = new Vector3();
 const PULL = new Vector3();
 import Planet from './Planet';
-
-let nextId = 1;
 
 export default function PlanetField() {
   const { gameState, addScore, loseLife, takeFromQueue, queue, shots, volumes, setCombo } = useGame();
@@ -104,7 +104,7 @@ export default function PlanetField() {
       const points = Math.round(spec.points * (1 + COMBO_STEP * (comboRef.current - 1)));
 
       const merged = {
-        id: nextId++,
+        id: nextId(),
         type: grown,
         position: at,
         velocity: [
@@ -162,7 +162,7 @@ export default function PlanetField() {
       if (blocked) return;
 
       const launched = {
-        id: nextId++,
+        id: nextId(),
         type: queue[0].type,
         position: spawn,
         velocity: [-x * SHOT_SPEED, -y * SHOT_SPEED, -z * SHOT_SPEED],
@@ -220,9 +220,11 @@ export default function PlanetField() {
       const inside = distance <= boundary;
       const held = inside ? 0 : (outside.current.get(planet.id) ?? 0) + delta;
       outside.current.set(planet.id, held);
-      // A planet on the clock is visible from the first frame, not after it has
-      // already burned a third of its grace.
-      flags.current.set(planet.id, held > 0 ? Math.min(1, 0.32 + (0.68 * held) / GRACE_SECONDS) : 0);
+      // Visible the moment it means anything, which is once a launch has had
+      // time to arrive. Then it is bright immediately rather than fading up.
+      const shown =
+        held <= WARNING_AFTER ? 0 : Math.min(1, 0.32 + (0.68 * (held - WARNING_AFTER)) / (GRACE_SECONDS - WARNING_AFTER));
+      flags.current.set(planet.id, shown);
 
       if (held >= GRACE_SECONDS) {
         doomed.push({ id: planet.id, at: [at.x, at.y, at.z], type: planet.type, silent: false });

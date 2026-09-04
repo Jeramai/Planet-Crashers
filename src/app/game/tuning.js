@@ -14,6 +14,13 @@ export const DANGER_SHRINK_PER_SHOT = 0.085;
 export const dangerRadiusAt = (shots) => Math.max(DANGER_MIN, DANGER_START - shots * DANGER_SHRINK_PER_SHOT);
 export const GRACE_SECONDS = 3;
 
+/* A launch is half outside on its way in — a quarter of a second usually, up to
+   about eight tenths when it has to shoulder into a full field. The clock still
+   runs the whole time, no exceptions and no loopholes, but the warning waits, so
+   a shot does not paint itself and the whole field red on the way to the pile.
+   Anything genuinely stuck still gets more than two seconds of red. */
+export const WARNING_AFTER = 0.9;
+
 export const GRAVITY = 6.5;
 
 /* Launched from just outside the field, wherever the field currently is. A fixed

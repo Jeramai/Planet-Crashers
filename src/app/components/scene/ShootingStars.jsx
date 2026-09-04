@@ -3,6 +3,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdditiveBlending, Color, Quaternion, Vector3 } from 'three';
+import { nextId } from '../../game/ids';
 
 const TAIL = 72;
 const DISTANCE = 150;
@@ -55,8 +56,6 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-let streakId = 1;
-
 /* Spawned in front of whatever the camera is looking at, or most of them would
    streak past behind the player. */
 function makeStreak(camera) {
@@ -77,7 +76,7 @@ function makeStreak(camera) {
     .addScaledVector(lift, up);
 
   return {
-    id: streakId++,
+    id: nextId(),
     at: [at.x, at.y, at.z],
     quaternion: new Quaternion().setFromUnitVectors(LOCAL_FORWARD, direction),
     colour: COLOURS[Math.floor(Math.random() * COLOURS.length)]

@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdditiveBlending, Color } from 'three';
 import { GameEvent, on } from '../../game/events';
+import { nextId } from '../../game/ids';
 
 const LIFE_SECONDS = 1.1;
 
@@ -101,15 +102,13 @@ function Burst({ at, geometry, radius, color, speed, onDone }) {
   );
 }
 
-let burstId = 1;
-
 export default function Bursts() {
   const [bursts, setBursts] = useState([]);
 
   useEffect(() => {
     const add = (kind) => (payload) => {
       const burst = {
-        id: burstId++,
+        id: nextId(),
         at: payload.at,
         radius: payload.radius,
         color: payload.color,
