@@ -42,7 +42,6 @@ export default function PlanetField() {
   const flags = useRef(new Map());
   const outside = useRef(new Map());
   const consumed = useRef(new Set());
-  const armed = useRef(new Set());
   const lastShot = useRef(0);
   const lastMerge = useRef(0);
   const comboRef = useRef(0);
@@ -62,7 +61,6 @@ export default function PlanetField() {
         bodies.current.delete(id);
         flags.current.delete(id);
         outside.current.delete(id);
-        armed.current.delete(id);
       });
       write((list) => list.filter((p) => !gone.has(p.id)));
     },
@@ -214,17 +212,13 @@ export default function PlanetField() {
         body.applyImpulse(PULL, true);
       }
 
-      // Measured to the planet's surface, not its centre: a body poking through
-      // the field is exactly what the player sees, and it makes the giants at the
-      // top of the chain genuinely dangerous.
-      // The clock only starts once a planet has been inside. A launch begins
-      // outside the field, and nobody should lose a life for the flight in.
-      const inside = distance + specOf(planet.type).radius <= boundary;
-      if (inside) armed.current.add(planet.id);
-
-      // A planet that overshoots and falls back is safe. Only one that stays out
-      // for the whole grace window costs a life.
-      const held = !inside && armed.current.has(planet.id) ? (outside.current.get(planet.id) ?? 0) + delta : 0;
+      // Half the planet has to be outside before its clock starts, which is its
+      // centre past the boundary. Judging it by the first pixel poking through
+      // read as arbitrary, and there is no arming latch any more: a launch
+      // starts 1.6 units out and is inside within a quarter of a second, so the
+      // rule is simply "half out for three seconds, continuously".
+      const inside = distance <= boundary;
+      const held = inside ? 0 : (outside.current.get(planet.id) ?? 0) + delta;
       outside.current.set(planet.id, held);
       // A planet on the clock is visible from the first frame, not after it has
       // already burned a third of its grace.
