@@ -59,7 +59,7 @@ export default function GameProvider({ children }) {
   const bestSoFar = useRef(0);
 
   const [volumes, setVolumes] = useState(() => ({
-    music: readNumber('musicVolume', 0.35),
+    music: readNumber('musicVolume', 0.45),
     explosion: readNumber('explosionVolume', 0.5),
     merge: readNumber('mergeVolume', 0.5),
     shot: readNumber('shotVolume', 0.5)

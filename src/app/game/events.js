@@ -20,5 +20,6 @@ export const GameEvent = {
   Shake: 'shake',
   Popup: 'popup',
   Shoot: 'shoot',
-  Danger: 'danger'
+  Danger: 'danger',
+  Tension: 'tension'
 };
