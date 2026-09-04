@@ -4,22 +4,22 @@ import { useEffect, useRef } from 'react';
 import { primeSounds } from '../game/audio';
 import { SpaceScore } from '../game/music/player';
 import { useGame } from '../game/store';
-import { DANGER_MIN, DANGER_START, dangerRadiusAt } from '../game/tuning';
+import { FIELD_MIN, FIELD_START, fieldRadiusAt } from '../game/tuning';
 
 /* Everything that needs an AudioContext starts here, on one gesture. */
 export default function Audio() {
-  const { volumes, runId, shots } = useGame();
-  const score = useRef(null);
+  const { volumes, runId, shots, score } = useGame();
+  const engine = useRef(null);
 
   useEffect(() => {
-    const engine = new SpaceScore();
-    score.current = engine;
+    const player = new SpaceScore();
+    engine.current = player;
 
     // Browsers refuse an AudioContext until the player interacts. The same
     // gesture decodes the effect buffers, so the first launch is not silent.
     const begin = () => {
       primeSounds();
-      void engine.start();
+      void player.start();
     };
 
     window.addEventListener('pointerdown', begin, { once: true });
@@ -28,23 +28,24 @@ export default function Audio() {
     return () => {
       window.removeEventListener('pointerdown', begin);
       window.removeEventListener('keydown', begin);
-      engine.stop();
-      score.current = null;
+      player.stop();
+      engine.current = null;
     };
   }, []);
 
   useEffect(() => {
-    score.current?.setVolume(volumes.music);
+    engine.current?.setVolume(volumes.music);
   }, [volumes.music]);
 
-  // The score tightens with the field.
+  // The music tightens with the field, which now answers to how the run is going.
   useEffect(() => {
-    score.current?.setTension((DANGER_START - dangerRadiusAt(shots)) / (DANGER_START - DANGER_MIN));
-  }, [shots]);
+    const squeeze = (FIELD_START - fieldRadiusAt(shots, score)) / (FIELD_START - FIELD_MIN);
+    engine.current?.setTension(Math.min(1, Math.max(0, squeeze)));
+  }, [shots, score]);
 
   // A new run gets a new piece.
   useEffect(() => {
-    score.current?.reseed(runId);
+    engine.current?.reseed(runId);
   }, [runId]);
 
   return null;

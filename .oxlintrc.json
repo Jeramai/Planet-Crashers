@@ -8,8 +8,9 @@
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
+    "eslint/no-undef": "error",
     "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }]
   },
   "ignorePatterns": [".next", "out"],
-  "env": { "builtin": true, "browser": true, "es2024": true }
+  "env": { "builtin": true, "browser": true, "node": true, "commonjs": true, "es2024": true }
 }

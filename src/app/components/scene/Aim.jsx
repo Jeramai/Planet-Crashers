@@ -16,7 +16,7 @@ const TRAIL_FADES = Float32Array.from({ length: DOTS }, (_, i) => 1 - i / DOTS);
 
 /* A camera-facing ring at the exact size of the incoming planet. A solid ghost —
    or a fresnel shell this close to the lens — just paints over the pile. */
-export default function Aim({ type, shots }) {
+export default function Aim({ type, shots, score }) {
   const spec = specOf(type);
   const camera = useThree((state) => state.camera);
 
@@ -29,7 +29,7 @@ export default function Aim({ type, shots }) {
 
   useFrame(() => {
     // Matches the launch exactly: on the boundary, on the camera's own ray.
-    muzzle.copy(camera.position).normalize().multiplyScalar(spawnRadiusAt(shots));
+    muzzle.copy(camera.position).normalize().multiplyScalar(spawnRadiusAt(shots, score));
     if (reticle.current) {
       reticle.current.position.copy(muzzle);
       reticle.current.quaternion.copy(camera.quaternion);
