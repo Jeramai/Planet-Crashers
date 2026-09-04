@@ -6,8 +6,10 @@ import { Vector3 } from 'three';
    shots, so a fixed boundary is never reached and the run cannot end. A field
    that contracts turns every run into a clock the player races. */
 export const DANGER_START = 9;
-export const DANGER_MIN = 4.2;
-export const DANGER_SHRINK_PER_SHOT = 0.075;
+/* Measured, not guessed: the furthest planet centre in a long run plateaus near
+   3.5, so a floor above that is a field the pile can never reach. */
+export const DANGER_MIN = 2.8;
+export const DANGER_SHRINK_PER_SHOT = 0.085;
 
 export const dangerRadiusAt = (shots) => Math.max(DANGER_MIN, DANGER_START - shots * DANGER_SHRINK_PER_SHOT);
 export const GRACE_SECONDS = 3;
