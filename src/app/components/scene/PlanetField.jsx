@@ -13,6 +13,7 @@ import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
+  BURN_COOLDOWN_MS,
   GRACE_SECONDS,
   WARNING_AFTER,
   GRAVITY,
@@ -33,7 +34,7 @@ const PULL = new Vector3();
 import Planet from './Planet';
 
 export default function PlanetField() {
-  const { gameState, addScore, loseLife, takeFromQueue, queue, field, setContentVolume, volumes, setCombo } = useGame();
+  const { gameState, addScore, loseLife, takeFromQueue, queue, field, setBoard, countMerge, volumes, setCombo } = useGame();
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
@@ -45,6 +46,7 @@ export default function PlanetField() {
   const consumed = useRef(new Set());
   const lastShot = useRef(0);
   const lastMerge = useRef(0);
+  const shieldUntil = useRef(0);
   const comboRef = useRef(0);
   const alerting = useRef(false);
 
@@ -54,10 +56,25 @@ export default function PlanetField() {
     (update) => {
       planetsRef.current = update(planetsRef.current);
       setPlanets(planetsRef.current);
-      // Published on change, not per frame: the field is sized to this.
-      setContentVolume(planetsRef.current.reduce((sum, planet) => sum + volumeOf(planet.type), 0));
+      // Published on change, not per frame: the field is sized from this. The two
+      // largest radii matter as much as the total, because they set how far apart
+      // the centres of the biggest bodies have to be.
+      let volume = 0;
+      let biggest = 0;
+      let second = 0;
+      for (const planet of planetsRef.current) {
+        volume += volumeOf(planet.type);
+        const r = specOf(planet.type).radius;
+        if (r > biggest) {
+          second = biggest;
+          biggest = r;
+        } else if (r > second) {
+          second = r;
+        }
+      }
+      setBoard({ volume, biggest, second });
     },
-    [setContentVolume]
+    [setBoard]
   );
 
   const drop = useCallback(
@@ -128,12 +145,13 @@ export default function PlanetField() {
       consumed.current.delete(idB);
 
       addScore(points);
+      countMerge();
       playSound('merge', volumes.merge, spec.radius);
       emit(GameEvent.Merge, { at, radius: spec.radius, color: spec.air?.color ?? '#cfe6ff' });
       emit(GameEvent.Popup, { at, text: `+${points}`, combo: comboRef.current });
       emit(GameEvent.Shake, { trauma: Math.min(0.5, 0.14 + spec.radius * 0.05) });
     },
-    [addScore, drop, setCombo, volumes.merge, write]
+    [addScore, countMerge, drop, setCombo, volumes.merge, write]
   );
 
   useEffect(() => {
@@ -194,6 +212,14 @@ export default function PlanetField() {
     const delta = Math.min(rawDelta, 0.05);
     const doomed = [];
 
+    // Everything that was on the clock when a planet burned gets it wiped, and
+    // nothing else can burn until the player has had a beat to react.
+    const shielded = performance.now() < shieldUntil.current;
+    if (shielded) {
+      outside.current.clear();
+      flags.current.clear();
+    }
+
     for (const planet of planetsRef.current) {
       const body = bodies.current.get(planet.id);
       if (!body) continue;
@@ -234,7 +260,7 @@ export default function PlanetField() {
         held <= WARNING_AFTER ? 0 : Math.min(1, 0.32 + (0.68 * (held - WARNING_AFTER)) / (GRACE_SECONDS - WARNING_AFTER));
       flags.current.set(planet.id, shown);
 
-      if (held >= GRACE_SECONDS) {
+      if (!shielded && held >= GRACE_SECONDS) {
         doomed.push({ id: planet.id, at: [at.x, at.y, at.z], type: planet.type, silent: false });
       }
     }
@@ -249,6 +275,8 @@ export default function PlanetField() {
     }
 
     if (doomed.length === 0) return;
+
+    if (doomed.some((d) => !d.silent)) shieldUntil.current = performance.now() + BURN_COOLDOWN_MS;
 
     doomed.forEach(({ at, type, silent }) => {
       if (silent) return;

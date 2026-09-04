@@ -44,49 +44,49 @@ const SPEC = {
     air: { color: '#e0a070', power: 3.4, strength: 0.22 }
   },
   [PlanetType.Venus]: {
-    radius: 0.95,
+    radius: 0.92,
     points: 24,
     roughness: 0.8,
     bump: 0.012,
     air: { color: '#ffd9a0', power: 2.6, strength: 0.42 }
   },
   [PlanetType.Earth]: {
-    radius: 1.2,
+    radius: 1.08,
     points: 48,
     roughness: 0.62,
     bump: 0.022,
     air: { color: '#5aa9ff', power: 2.8, strength: 0.5 }
   },
   [PlanetType.Neptune]: {
-    radius: 1.55,
+    radius: 1.26,
     points: 96,
     roughness: 0.55,
     bump: 0.008,
     air: { color: '#4d7bff', power: 2.4, strength: 0.45 }
   },
   [PlanetType.Uranus]: {
-    radius: 1.95,
+    radius: 1.46,
     points: 192,
     roughness: 0.55,
     bump: 0.008,
     air: { color: '#8fe6e0', power: 2.4, strength: 0.42 }
   },
   [PlanetType.Saturn]: {
-    radius: 2.45,
+    radius: 1.68,
     points: 384,
     roughness: 0.6,
     bump: 0.01,
     air: { color: '#e8dcb0', power: 2.6, strength: 0.3 }
   },
   [PlanetType.Jupiter]: {
-    radius: 3.1,
+    radius: 1.92,
     points: 768,
     roughness: 0.6,
     bump: 0.012,
     air: { color: '#e3b98a', power: 2.6, strength: 0.34 }
   },
   [PlanetType.Sun]: {
-    radius: 3.4,
+    radius: 2.2,
     points: 2048,
     roughness: 1,
     bump: 0,
