@@ -2,16 +2,25 @@ import { Vector3 } from 'three';
 
 /* One place for every number that changes how the game feels. */
 
-/* The field closes in. Central gravity means merges always keep pace with the
-   shots, so a fixed boundary is never reached and the run cannot end. A field
-   that contracts turns every run into a clock the player races. */
-export const DANGER_START = 9;
-/* Measured, not guessed: the furthest planet centre in a long run plateaus near
-   3.5, so a floor above that is a field the pile can never reach. */
-export const DANGER_MIN = 2.8;
-export const DANGER_SHRINK_PER_SHOT = 0.085;
+/* The field answers to progress, not to the clock. Every shot closes it in and
+   every point earned opens it back up, so merging well buys room and spamming
+   does not. It also starts tight, because a field the early pile cannot get
+   near is a field the early game can ignore. */
+export const FIELD_MAX = 7.5;
+export const FIELD_START = 5.6;
+export const FIELD_MIN = 2.8;
+export const FIELD_SHRINK_PER_SHOT = 0.1;
+/* Diminishing, on the root of the score. Points buy room, so a run that merges
+   well is given the space to keep going, but they buy less and less of it, so
+   every run still ends. Paid linearly, a good run simply outran the shrink. */
+export const FIELD_EXPAND_PER_ROOT = 0.115;
 
-export const dangerRadiusAt = (shots) => Math.max(DANGER_MIN, DANGER_START - shots * DANGER_SHRINK_PER_SHOT);
+export const fieldRadiusAt = (shots, score) =>
+  Math.min(
+    FIELD_MAX,
+    Math.max(FIELD_MIN, FIELD_START - shots * FIELD_SHRINK_PER_SHOT + Math.sqrt(Math.max(0, score)) * FIELD_EXPAND_PER_ROOT)
+  );
+
 export const GRACE_SECONDS = 3;
 
 /* A launch is half outside on its way in — a quarter of a second usually, up to
@@ -27,7 +36,9 @@ export const GRAVITY = 6.5;
    spawn ring left every late shot coasting in from far outside the boundary,
    unharmed, while a settled planet a hair outside was already on the clock. */
 export const LAUNCH_GAP = 1.6;
-export const spawnRadiusAt = (shots) => dangerRadiusAt(shots) + LAUNCH_GAP;
+export const LAUNCH_STEP = 0.7;
+export const LAUNCH_STEPS_MAX = 12;
+export const spawnRadiusAt = (shots, score) => fieldRadiusAt(shots, score) + LAUNCH_GAP;
 export const SHOT_SPEED = 6.5;
 export const SHOT_COOLDOWN_MS = 220;
 

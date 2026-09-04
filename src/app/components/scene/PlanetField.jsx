@@ -13,13 +13,15 @@ import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
-  dangerRadiusAt,
+  fieldRadiusAt,
   GRACE_SECONDS,
   WARNING_AFTER,
   GRAVITY,
   LOST_DISTANCE,
   MAX_SPEED,
   MERGE_VELOCITY_KEEP,
+  LAUNCH_STEP,
+  LAUNCH_STEPS_MAX,
   spawnRadiusAt,
   SHOT_COOLDOWN_MS,
   SHOT_SPEED
@@ -32,7 +34,7 @@ const PULL = new Vector3();
 import Planet from './Planet';
 
 export default function PlanetField() {
-  const { gameState, addScore, loseLife, takeFromQueue, queue, shots, volumes, setCombo } = useGame();
+  const { gameState, addScore, loseLife, takeFromQueue, queue, shots, score, volumes, setCombo } = useGame();
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
@@ -147,19 +149,25 @@ export default function PlanetField() {
       AIM.copy(camera.position).normalize();
       const { x, y, z } = AIM;
       const spec = specOf(queue[0].type);
-      const muzzle = spawnRadiusAt(shots);
-      const spawn = [x * muzzle, y * muzzle, z * muzzle];
-
       // Spawning inside another body makes Rapier fling both of them out of the
-      // well, so a blocked muzzle simply does not fire.
-      const blocked = planetsRef.current.some((other) => {
-        const body = bodies.current.get(other.id);
-        if (!body) return false;
-        const at = body.translation();
-        const gap = Math.hypot(at.x - spawn[0], at.y - spawn[1], at.z - spawn[2]);
-        return gap < specOf(other.type).radius + spec.radius + 0.4;
-      });
-      if (blocked) return;
+      // well. Refusing to fire when the muzzle is occupied looked like a fix, but
+      // once a giant sits across the muzzle it never clears, and the run locks up
+      // with the player unable to shoot. So step outward until there is room.
+      const occupied = (at) =>
+        planetsRef.current.some((other) => {
+          const body = bodies.current.get(other.id);
+          if (!body) return false;
+          const there = body.translation();
+          const gap = Math.hypot(there.x - at[0], there.y - at[1], there.z - at[2]);
+          return gap < specOf(other.type).radius + spec.radius + 0.4;
+        });
+
+      let muzzle = spawnRadiusAt(shots, score);
+      let spawn = [x * muzzle, y * muzzle, z * muzzle];
+      for (let step = 0; step < LAUNCH_STEPS_MAX && occupied(spawn); step++) {
+        muzzle += LAUNCH_STEP;
+        spawn = [x * muzzle, y * muzzle, z * muzzle];
+      }
 
       const launched = {
         id: nextId(),
@@ -175,11 +183,11 @@ export default function PlanetField() {
     };
 
     return on(GameEvent.Shoot, fire);
-  }, [running, camera, queue, shots, takeFromQueue, volumes.shot, write]);
+  }, [running, camera, queue, shots, score, takeFromQueue, volumes.shot, write]);
 
-  // Derived, not stored: the field is a function of how many shots have been
-  // fired, and useFrame is re-registered with the current value on every render.
-  const boundary = dangerRadiusAt(shots);
+  // Derived, not stored: the field is a function of shots fired and points
+  // earned, and useFrame is re-registered with the current value every render.
+  const boundary = fieldRadiusAt(shots, score);
 
   useFrame((_, rawDelta) => {
     if (!running) return;

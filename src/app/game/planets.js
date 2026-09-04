@@ -83,7 +83,7 @@ const SPEC = {
     air: { color: '#e3b98a', power: 2.6, strength: 0.34 }
   },
   [PlanetType.Sun]: {
-    radius: 4.2,
+    radius: 3.4,
     points: 2048,
     roughness: 1,
     bump: 0,
