@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
 import { BackSide, Color } from 'three';
 
 const vertexShader = /* glsl */ `
@@ -15,6 +16,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uDeep;
   uniform vec3 uWarm;
   uniform vec3 uCool;
+  uniform float uTime;
 
   varying vec3 vDirection;
 
@@ -49,28 +51,39 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec3 d = normalize(vDirection);
 
-    float clouds = fbm(d * 2.4);
-    float wisps = fbm(d * 6.1 + clouds * 1.6);
+    // The two layers drift at different rates, so the cloud slowly changes shape
+    // rather than sliding past as one sheet. Both are very slow on purpose.
+    float clouds = fbm(d * 2.4 + vec3(uTime * 0.006, uTime * 0.004, -uTime * 0.005));
+    float wisps = fbm(d * 6.1 + clouds * 1.6 + vec3(-uTime * 0.013, uTime * 0.009, uTime * 0.011));
+
+    float breath = 0.88 + 0.12 * sin(uTime * 0.11);
 
     float warm = smoothstep(0.52, 0.92, clouds) * 0.9;
     float cool = smoothstep(0.44, 0.86, wisps) * 0.6;
 
-    vec3 colour = uDeep + uWarm * warm + uCool * cool;
+    vec3 colour = uDeep + (uWarm * warm + uCool * cool) * breath;
 
     // Kept dim on purpose: this is a backdrop, and bloom lifts the bright wisps.
     gl_FragColor = vec4(colour * 0.16, 1.0);
   }
 `;
 
-export default function Nebula() {
+export default function Nebula({ still = false }) {
+  const material = useRef(null);
+
   const uniforms = useMemo(
     () => ({
       uDeep: { value: new Color('#05060f') },
       uWarm: { value: new Color('#4a2a6b') },
-      uCool: { value: new Color('#123a6b') }
+      uCool: { value: new Color('#123a6b') },
+      uTime: { value: 0 }
     }),
     []
   );
+
+  useFrame((_, delta) => {
+    if (!still && material.current) material.current.uniforms.uTime.value += delta;
+  });
 
   return (
     <mesh scale={[-1, 1, 1]} raycast={null} frustumCulled={false}>

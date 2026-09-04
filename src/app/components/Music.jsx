@@ -1,47 +1,44 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { soundUrl } from '../game/assets';
+import { GameEvent, on } from '../game/events';
+import { SpaceScore } from '../game/music/player';
 import { useGame } from '../game/store';
 
-const TRACKS = ['soundtrack-1', 'soundtrack-2', 'soundtrack-3'];
-
 export default function Music() {
-  const { volumes } = useGame();
-  const audio = useRef(null);
-  const track = useRef(0);
+  const { volumes, runId } = useGame();
+  const score = useRef(null);
 
   useEffect(() => {
-    track.current = Math.floor(Math.random() * TRACKS.length);
-    const el = new Audio(soundUrl(TRACKS[track.current]));
-    el.volume = 0;
-    audio.current = el;
+    const engine = new SpaceScore();
+    score.current = engine;
 
-    const advance = () => {
-      track.current = (track.current + 1) % TRACKS.length;
-      el.src = soundUrl(TRACKS[track.current]);
-      el.play().catch(() => {});
-    };
+    // Browsers refuse an AudioContext until the player interacts, so the first
+    // gesture starts it.
+    const begin = () => void engine.start();
+    window.addEventListener('pointerdown', begin, { once: true });
+    window.addEventListener('keydown', begin, { once: true });
 
-    // Browsers refuse audio until the player interacts, so the first gesture starts it.
-    const start = () => el.play().catch(() => {});
-
-    el.addEventListener('ended', advance);
-    window.addEventListener('pointerdown', start, { once: true });
-    window.addEventListener('keydown', start, { once: true });
+    const offTension = on(GameEvent.Tension, (value) => engine.setTension(value));
 
     return () => {
-      el.removeEventListener('ended', advance);
-      window.removeEventListener('pointerdown', start);
-      window.removeEventListener('keydown', start);
-      el.pause();
-      audio.current = null;
+      window.removeEventListener('pointerdown', begin);
+      window.removeEventListener('keydown', begin);
+      offTension();
+      engine.stop();
+      score.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (audio.current) audio.current.volume = Math.min(1, Math.max(0, volumes.music));
+    score.current?.setVolume(volumes.music);
   }, [volumes.music]);
+
+  // A new run gets a new piece.
+  useEffect(() => {
+    score.current?.reseed(runId);
+    score.current?.setTension(0);
+  }, [runId]);
 
   return null;
 }

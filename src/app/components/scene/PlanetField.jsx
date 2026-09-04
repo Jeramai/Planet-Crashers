@@ -12,6 +12,7 @@ import { GameState } from '../../game/state';
 import {
   COMBO_STEP,
   COMBO_WINDOW_MS,
+  DANGER_MIN,
   DANGER_START,
   dangerRadiusAt,
   GRACE_SECONDS,
@@ -150,6 +151,8 @@ export default function PlanetField() {
       lastShot.current = now;
       shots.current += 1;
       boundary.current = dangerRadiusAt(shots.current);
+      // The score tightens with the field.
+      emit(GameEvent.Tension, (DANGER_START - boundary.current) / (DANGER_START - DANGER_MIN));
 
       AIM.copy(camera.position).normalize();
       const { x, y, z } = AIM;

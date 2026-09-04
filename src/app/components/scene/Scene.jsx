@@ -1,7 +1,7 @@
 'use client';
 
 import { OrbitControls, PerspectiveCamera, Preload, Stars, useTexture } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useRef } from 'react';
 import { NoToneMapping } from 'three';
 import { textureUrl } from '../../game/assets';
@@ -9,6 +9,7 @@ import { emit, GameEvent } from '../../game/events';
 import { TEXTURE_FILES } from '../../game/planets';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
+import { useReducedMotion } from '../../game/use-reduced-motion';
 import { CAMERA } from '../../game/tuning';
 import Aim from './Aim';
 import Bursts from './Bursts';
@@ -18,6 +19,7 @@ import Nebula from './Nebula';
 import PlanetField from './PlanetField';
 import Popups from './Popups';
 import ShakeGroup from './ShakeGroup';
+import ShootingStars from './ShootingStars';
 import Sunlight from './Sunlight';
 
 if (typeof window !== 'undefined') useTexture.preload(TEXTURE_FILES.map(textureUrl));
@@ -28,6 +30,7 @@ const TAP_MS = 450;
 
 export default function Scene() {
   const { gameState, queue, runId } = useGame();
+  const still = useReducedMotion();
   const playing = gameState === GameState.Playing;
   // The board stays on screen while paused and after the run, so the card sits
   // over the arrangement the player actually built.
@@ -59,8 +62,11 @@ export default function Scene() {
       <GameCamera />
 
       <Suspense fallback={null}>
-        <Nebula />
-        <Stars radius={240} depth={100} count={9000} factor={4.5} saturation={0} fade speed={0.35} />
+        <Nebula still={still} />
+        <Drift still={still}>
+          <Stars radius={240} depth={100} count={9000} factor={4.5} saturation={0} fade speed={0.35} />
+        </Drift>
+        {still ? null : <ShootingStars />}
 
         <ShakeGroup>
           <Sunlight />
@@ -104,4 +110,18 @@ function GameCamera() {
   const fov = aspect < 1 ? Math.min(MAX_FOV, CAMERA.fov / aspect) : CAMERA.fov;
 
   return <PerspectiveCamera makeDefault position={CAMERA.start} fov={fov} near={0.1} far={1200} />;
+}
+
+/* A whole-sky rotation slow enough that you never catch it moving, but the
+   backdrop is never the same twice. */
+function Drift({ children, still }) {
+  const group = useRef(null);
+
+  useFrame((_, delta) => {
+    if (still || !group.current) return;
+    group.current.rotation.y += delta * 0.0055;
+    group.current.rotation.x += delta * 0.0021;
+  });
+
+  return <group ref={group}>{children}</group>;
 }
