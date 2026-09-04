@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { nextId } from './ids';
 import { DEALT, PlanetType } from './planets';
+import { fieldRadius } from './tuning';
 import { GameState, START_LIVES } from './state';
 
 const QUEUE_AHEAD = 3;
@@ -54,6 +55,7 @@ export default function GameProvider({ children }) {
   const [combo, setCombo] = useState(0);
   const [runId, setRunId] = useState(0);
   const [shots, setShots] = useState(0);
+  const [contentVolume, setContentVolume] = useState(0);
   const livesLeft = useRef(START_LIVES);
   const scoreSoFar = useRef(0);
   const bestSoFar = useRef(0);
@@ -102,12 +104,17 @@ export default function GameProvider({ children }) {
     scoreSoFar.current = 0;
     setRunId((n) => n + 1);
     setShots(0);
+    setContentVolume(0);
     setScore(0);
     setLives(START_LIVES);
     setQueue(freshQueue());
     setCombo(0);
     setGameState(GameState.Playing);
   }, []);
+
+  // The field is sized to what is inside it, so it belongs with the board state
+  // rather than with any one component that happens to draw it.
+  const field = fieldRadius(contentVolume, shots, score);
 
   const value = useMemo(
     () => ({
@@ -121,6 +128,8 @@ export default function GameProvider({ children }) {
       setCombo,
       runId,
       shots,
+      field,
+      setContentVolume,
       volumes,
       setVolume,
       addScore,
@@ -137,6 +146,8 @@ export default function GameProvider({ children }) {
       combo,
       runId,
       shots,
+      field,
+      setContentVolume,
       volumes,
       setVolume,
       addScore,

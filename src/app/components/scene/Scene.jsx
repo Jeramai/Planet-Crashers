@@ -10,7 +10,7 @@ import { TEXTURE_FILES } from '../../game/planets';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
 import { useReducedMotion } from '../../game/use-reduced-motion';
-import { CAMERA } from '../../game/tuning';
+import { CAMERA, spawnRadiusFor } from '../../game/tuning';
 import Aim from './Aim';
 import Bursts from './Bursts';
 import Effects from './Effects';
@@ -29,7 +29,7 @@ const TAP_SLOP_PX = 8;
 const TAP_MS = 450;
 
 export default function Scene() {
-  const { gameState, queue, runId, shots, score } = useGame();
+  const { gameState, queue, runId, field } = useGame();
   const still = useReducedMotion();
   const playing = gameState === GameState.Playing;
   // The board stays on screen while paused and after the run, so the card sits
@@ -81,7 +81,7 @@ export default function Scene() {
           )}
         </ShakeGroup>
 
-        {playing ? <Aim type={queue[0].type} shots={shots} score={score} /> : null}
+        {playing ? <Aim type={queue[0].type} field={field} /> : null}
         <Preload all />
       </Suspense>
 
@@ -91,8 +91,8 @@ export default function Scene() {
         dampingFactor={0.075}
         rotateSpeed={0.55}
         zoomSpeed={0.65}
-        minDistance={CAMERA.min}
-        maxDistance={CAMERA.max}
+        minDistance={spawnRadiusFor(field) + 5}
+        maxDistance={Math.max(24, field * 5)}
         autoRotate={!inRun}
         autoRotateSpeed={0.35}
       />
