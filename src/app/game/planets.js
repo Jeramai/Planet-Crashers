@@ -106,4 +106,4 @@ export function massOf(type) {
   return r * r * r;
 }
 
-export const TEXTURE_FILES = [...MERGE_CHAIN.map((t) => `2k_${t}.jpg`), 'saturn-rings-top.png'];
+export const TEXTURE_FILES = [...MERGE_CHAIN.map((t) => `${t}.webp`), 'saturn-rings-top.webp'];
