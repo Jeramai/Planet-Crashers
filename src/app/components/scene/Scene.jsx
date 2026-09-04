@@ -34,7 +34,7 @@ export default function Scene() {
   const playing = gameState === GameState.Playing;
   // The board stays on screen while paused and after the run, so the card sits
   // over the arrangement the player actually built.
-  const inRun = playing || gameState === GameState.Paused || gameState === GameState.Over;
+  const inRun = playing || gameState === GameState.Paused || gameState === GameState.Rules || gameState === GameState.Over;
   const press = useRef({ x: 0, y: 0, at: 0 });
 
   // One rule for mouse and touch: a press that neither moved nor lingered is a

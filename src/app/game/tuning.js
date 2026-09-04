@@ -20,7 +20,10 @@ export const SLACK_MIN = 0.85;
 export const SLACK_PER_SHOT = 0.008;
 export const SLACK_PER_ROOT_POINT = 0.0028;
 
-export const FIELD_MIN = 1.5;
+/* The floor is not decoration: with one or two planets on the board the volume
+   is tiny, and a field sized purely from it would put the opening shot in danger
+   the moment it drifted. Big enough to hold the first handful comfortably. */
+export const FIELD_MIN = 2.4;
 export const FIELD_MAX = 7.5;
 
 export const contentRadius = (volume) => (Math.max(0, volume) / PACKING) ** (1 / 3);

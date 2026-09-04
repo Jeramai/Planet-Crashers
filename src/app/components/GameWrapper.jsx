@@ -12,6 +12,7 @@ import Loading from './ui/Loading';
 import Menu from './ui/Menu';
 import Options from './ui/Options';
 import Paused from './ui/Paused';
+import Rules from './ui/Rules';
 import Audio from './Audio';
 
 const LOADING_FALLBACK_MS = 4000;
@@ -51,6 +52,7 @@ export default function GameWrapper() {
       {gameState === GameState.Menu ? <Menu /> : null}
       {gameState === GameState.Options ? <Options /> : null}
       {gameState === GameState.Paused ? <Paused /> : null}
+      {gameState === GameState.Rules ? <Rules /> : null}
       {gameState === GameState.Over ? <GameOver /> : null}
 
       {ready ? null : <Loading progress={progress} />}
