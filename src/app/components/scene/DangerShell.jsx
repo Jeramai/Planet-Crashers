@@ -3,7 +3,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { AdditiveBlending, Color, DoubleSide } from 'three';
-import { DANGER_RADIUS } from '../../game/tuning';
+import { DANGER_START } from '../../game/tuning';
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -35,7 +35,8 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export default function DangerShell({ flags }) {
+export default function DangerShell({ flags, boundary }) {
+  const shell = useRef(null);
   const material = useRef(null);
 
   const uniforms = useMemo(
@@ -49,6 +50,11 @@ export default function DangerShell({ flags }) {
   );
 
   useFrame((state, delta) => {
+    // Drawn at the start radius and scaled, so the field closing in is one number.
+    if (shell.current) {
+      const target = boundary.current / DANGER_START;
+      shell.current.scale.setScalar(shell.current.scale.x + (target - shell.current.scale.x) * Math.min(1, delta * 3));
+    }
     if (!material.current) return;
     let worst = 0;
     for (const value of flags.current.values()) worst = Math.max(worst, value);
@@ -58,8 +64,8 @@ export default function DangerShell({ flags }) {
   });
 
   return (
-    <mesh raycast={null}>
-      <sphereGeometry args={[DANGER_RADIUS, 64, 40]} />
+    <mesh ref={shell} raycast={null}>
+      <sphereGeometry args={[DANGER_START, 64, 40]} />
       <shaderMaterial
         ref={material}
         uniforms={uniforms}
