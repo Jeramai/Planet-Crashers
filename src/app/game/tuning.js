@@ -15,25 +15,47 @@ import { Vector3 } from 'three';
    pile is already spilling out of. Starting slack is deliberately close to that
    line: the field should look full from the first handful of shots. */
 export const PACKING = 0.6;
-export const SLACK_START = 1.35;
-export const SLACK_MIN = 0.85;
-export const SLACK_PER_SHOT = 0.008;
+export const SLACK_START = 1.22;
+export const SLACK_MIN = 0.78;
+export const SLACK_PER_SHOT = 0.0085;
 export const SLACK_PER_ROOT_POINT = 0.0028;
 
 /* The floor is not decoration: with one or two planets on the board the volume
    is tiny, and a field sized purely from it would put the opening shot in danger
    the moment it drifted. Big enough to hold the first handful comfortably. */
-export const FIELD_MIN = 2.4;
+export const FIELD_MIN = 2;
 export const FIELD_MAX = 7.5;
+
+/* Merging buys the field back, but less than a shot costs it. Well below
+   SLACK_PER_SHOT on purpose: a board that keeps merging closes at about half
+   speed, which is a reward you feel without ever reversing the squeeze. */
+export const SLACK_PER_MERGE = 0.003;
 
 export const contentRadius = (volume) => (Math.max(0, volume) / PACKING) ** (1 / 3);
 
-export function fieldRadius(volume, shots, score) {
-  const slack = Math.max(SLACK_MIN, SLACK_START - shots * SLACK_PER_SHOT + Math.sqrt(Math.max(0, score)) * SLACK_PER_ROOT_POINT);
-  return Math.min(FIELD_MAX, Math.max(FIELD_MIN, contentRadius(volume) * slack));
+/* Only enough that the largest body on the board is never doomed by its own
+   size. Sizing the floor to hold the two biggest apart was fairer per planet and
+   ruinous overall: with a Saturn and a Jupiter on the board it forced a field
+   wider than the pile ever grows, and nothing could ever burn. Several planets
+   crossing together is handled by the burn cooldown instead, which is the actual
+   complaint — losing three lives in one breath, not losing one. */
+export const geometricFloor = (biggest) => biggest * 1.15;
+
+export function fieldRadius(board, shots, score, merges) {
+  const slack = Math.max(
+    SLACK_MIN,
+    SLACK_START - shots * SLACK_PER_SHOT + merges * SLACK_PER_MERGE + Math.sqrt(Math.max(0, score)) * SLACK_PER_ROOT_POINT
+  );
+
+  return Math.min(FIELD_MAX, Math.max(FIELD_MIN, geometricFloor(board.biggest), contentRadius(board.volume) * slack));
 }
 
 export const GRACE_SECONDS = 2.4;
+
+/* One burn at a time. Several planets can cross the line together, and losing
+   three lives in two seconds is not a loss the player had any say in. A burn
+   clears every other clock and buys this long before anything else can go. */
+export const BURN_COOLDOWN_MS = 2600;
 
 /* A launch is half outside on its way in — a quarter of a second usually, up to
    about eight tenths when it has to shoulder into a full field. The clock still

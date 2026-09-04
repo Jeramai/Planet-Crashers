@@ -55,7 +55,8 @@ export default function GameProvider({ children }) {
   const [combo, setCombo] = useState(0);
   const [runId, setRunId] = useState(0);
   const [shots, setShots] = useState(0);
-  const [contentVolume, setContentVolume] = useState(0);
+  const [board, setBoard] = useState({ volume: 0, biggest: 0, second: 0 });
+  const [merges, setMerges] = useState(0);
   const livesLeft = useRef(START_LIVES);
   const beforeRules = useRef(GameState.Menu);
   const scoreSoFar = useRef(0);
@@ -109,12 +110,15 @@ export default function GameProvider({ children }) {
 
   const closeRules = useCallback(() => setGameState(beforeRules.current), []);
 
+  const countMerge = useCallback(() => setMerges((n) => n + 1), []);
+
   const startRun = useCallback(() => {
     livesLeft.current = START_LIVES;
     scoreSoFar.current = 0;
     setRunId((n) => n + 1);
     setShots(0);
-    setContentVolume(0);
+    setBoard({ volume: 0, biggest: 0, second: 0 });
+    setMerges(0);
     setScore(0);
     setLives(START_LIVES);
     setQueue(freshQueue());
@@ -124,7 +128,7 @@ export default function GameProvider({ children }) {
 
   // The field is sized to what is inside it, so it belongs with the board state
   // rather than with any one component that happens to draw it.
-  const field = fieldRadius(contentVolume, shots, score);
+  const field = fieldRadius(board, shots, score, merges);
 
   const value = useMemo(
     () => ({
@@ -139,7 +143,8 @@ export default function GameProvider({ children }) {
       runId,
       shots,
       field,
-      setContentVolume,
+      setBoard,
+      countMerge,
       volumes,
       setVolume,
       addScore,
@@ -159,7 +164,8 @@ export default function GameProvider({ children }) {
       runId,
       shots,
       field,
-      setContentVolume,
+      setBoard,
+      countMerge,
       volumes,
       setVolume,
       addScore,
