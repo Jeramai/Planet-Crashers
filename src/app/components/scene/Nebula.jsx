@@ -37,6 +37,43 @@ const fragmentShader = /* glsl */ `
     );
   }
 
+  vec3 spin(vec3 p, float angle) {
+    float c = cos(angle);
+    float s = sin(angle);
+    return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+  }
+
+  /* One star per cell, jittered inside it, sized in screen space.
+
+     Drawn here rather than as point sprites because a point smaller than a pixel
+     flickers as it crosses the pixel grid, and worse where an additive surface
+     sits in front of it. fwidth gives every star a floor of about a pixel and a
+     half of falloff, so it stays put however far it is. */
+  float starLayer(vec3 dir, float scale, float threshold, float radius, out float shade) {
+    vec3 p = dir * scale;
+    vec3 cell = floor(p);
+    vec3 within = p - cell;
+
+    float pick = hash(cell + 47.3);
+    shade = hash(cell + 91.7);
+    if (pick < threshold) return 0.0;
+
+    /* Kept a full radius clear of the cell walls. Sampling only the cell a pixel
+       falls in is cheap, but a star jittered onto a boundary gets sliced by it,
+       and a sky full of clipped discs reads as squares. */
+    vec3 jitter = vec3(hash(cell + 3.1), hash(cell + 13.7), hash(cell + 29.9));
+    vec3 at = radius + jitter * (1.0 - 2.0 * radius);
+    float d = length(within - at);
+
+    /* Clamped, because fwidth is a per-quad screen derivative and the direction
+       it is measured on breaks across every triangle edge of this sphere. Left
+       unbounded, the width explodes along those seams and paints the whole
+       tessellation across the sky as thin white polygons. */
+    float aa = clamp(fwidth(d) * 1.5, 0.0004, radius * 0.6);
+    float core = 1.0 - smoothstep(radius - aa, radius + aa, d);
+    return core * (pick - threshold) / (1.0 - threshold);
+  }
+
   float fbm(vec3 p) {
     float sum = 0.0;
     float amp = 0.5;
@@ -64,7 +101,24 @@ const fragmentShader = /* glsl */ `
     vec3 colour = uDeep + (uWarm * warm + uCool * cool) * breath;
 
     // Kept dim on purpose: this is a backdrop, and bloom lifts the bright wisps.
-    gl_FragColor = vec4(colour * 0.16, 1.0);
+    colour *= 0.16;
+
+    // The whole sky turns slowly enough that you never catch it moving.
+    vec3 sky = spin(d, uTime * 0.004);
+
+    /* Radii are in cell units and chosen so each layer lands near a pixel across.
+       Smaller than that and a star is sub-pixel: dim, and back to flickering. */
+    float shade;
+    float near = starLayer(sky, 74.0, 0.9885, 0.13, shade);
+    colour += mix(vec3(0.70, 0.81, 1.0), vec3(1.0, 0.89, 0.73), shade) * near * 1.6;
+
+    float mid = starLayer(sky, 148.0, 0.9820, 0.20, shade);
+    colour += mix(vec3(0.79, 0.86, 1.0), vec3(1.0, 0.94, 0.84), shade) * mid * 0.9;
+
+    float dust = starLayer(sky, 290.0, 0.9730, 0.34, shade);
+    colour += vec3(0.78, 0.84, 1.0) * dust * 0.45;
+
+    gl_FragColor = vec4(colour, 1.0);
   }
 `;
 

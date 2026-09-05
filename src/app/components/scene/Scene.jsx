@@ -1,7 +1,7 @@
 'use client';
 
-import { OrbitControls, PerspectiveCamera, Preload, Stars, useTexture } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Preload, useTexture } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef } from 'react';
 import { NoToneMapping } from 'three';
 import { textureUrl } from '../../game/assets';
@@ -80,9 +80,6 @@ export default function Scene() {
 
       <Suspense fallback={null}>
         <Nebula still={still} />
-        <Drift still={still}>
-          <Stars radius={240} depth={100} count={9000} factor={4.5} saturation={0} fade speed={0.35} />
-        </Drift>
         {still ? null : <ShootingStars />}
 
         <ShakeGroup>
@@ -127,18 +124,4 @@ function GameCamera() {
   const fov = aspect < 1 ? Math.min(MAX_FOV, CAMERA.fov / aspect) : CAMERA.fov;
 
   return <PerspectiveCamera makeDefault position={CAMERA.start} fov={fov} near={0.1} far={1200} />;
-}
-
-/* A whole-sky rotation slow enough that you never catch it moving, but the
-   backdrop is never the same twice. */
-function Drift({ children, still }) {
-  const group = useRef(null);
-
-  useFrame((_, delta) => {
-    if (still || !group.current) return;
-    group.current.rotation.y += delta * 0.0055;
-    group.current.rotation.x += delta * 0.0021;
-  });
-
-  return <group ref={group}>{children}</group>;
 }
