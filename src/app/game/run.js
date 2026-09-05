@@ -1,4 +1,4 @@
-import { MERGE_CHAIN } from './planets';
+import { MERGE_CHAIN, PlanetType } from './planets';
 import { GameState, MAX_LIVES, START_LIVES } from './state';
 
 /* One run of the game, as a single transition table.
@@ -16,6 +16,7 @@ const blank = () => ({
   combo: 0,
   shots: 0,
   merges: 0,
+  suns: 0,
   board: { volume: 0, biggest: 0, second: 0 }
 });
 
@@ -93,6 +94,7 @@ export function runReducer(state, action) {
       return {
         ...state,
         merges: state.merges + 1,
+        suns: state.suns + (action.planet === PlanetType.Sun ? 1 : 0),
         best: held ? best : { type: furthest, chain: Math.max(best.chain, action.chain) }
       };
     }
