@@ -7,7 +7,7 @@ import Button from './Button';
 import Chain from './Chain';
 
 const CONTROLS = [
-  ['Launch', 'Tap, or click'],
+  ['Launch', 'Tap, click, or Space'],
   ['Aim', 'Drag to orbit the field'],
   ['Zoom', 'Scroll, or pinch'],
   ['Pause', 'Esc']

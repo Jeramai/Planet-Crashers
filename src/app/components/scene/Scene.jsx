@@ -2,7 +2,7 @@
 
 import { OrbitControls, PerspectiveCamera, Preload, Stars, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { NoToneMapping } from 'three';
 import { textureUrl } from '../../game/assets';
 import { emit, GameEvent } from '../../game/events';
@@ -42,6 +42,23 @@ export default function Scene() {
   const onPointerDown = (e) => {
     press.current = { x: e.clientX, y: e.clientY, at: performance.now() };
   };
+
+  useEffect(() => {
+    if (!playing) return;
+
+    const onKey = (e) => {
+      if (e.code !== 'Space' || e.repeat) return;
+      // A focused control owns the space bar. Hijacking it would break keyboard
+      // access to pause and the rules.
+      const active = document.activeElement;
+      if (active && (active.tagName === 'BUTTON' || active.tagName === 'INPUT' || active.isContentEditable)) return;
+      e.preventDefault();
+      emit(GameEvent.Shoot);
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [playing]);
 
   const onPointerUp = (e) => {
     if (!playing) return;
