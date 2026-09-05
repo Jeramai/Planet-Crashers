@@ -5,9 +5,10 @@ import { Physics } from '@react-three/rapier';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import { playSound } from '../../game/audio';
+import { buzz, HAPTICS } from '../../game/haptics';
 import { emit, GameEvent, on } from '../../game/events';
 import { nextId } from '../../game/ids';
-import { nextInChain, specOf, volumeOf } from '../../game/planets';
+import { nextInChain, PlanetType, specOf, volumeOf } from '../../game/planets';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
 import {
@@ -37,7 +38,20 @@ const BETWEEN = new Vector3();
 import Planet from './Planet';
 
 export default function PlanetField() {
-  const { gameState, addScore, loseLife, takeFromQueue, queue, field, setBoard, countMerge, volumes, setCombo } = useGame();
+  const {
+    gameState,
+    addScore,
+    loseLife,
+    gainLife,
+    takeFromQueue,
+    queue,
+    field,
+    setBoard,
+    countMerge,
+    haptics,
+    volumes,
+    setCombo
+  } = useGame();
   const camera = useThree((state) => state.camera);
 
   const [planets, setPlanets] = useState([]);
@@ -151,13 +165,25 @@ export default function PlanetField() {
       consumed.current.delete(idB);
 
       addScore(points);
-      countMerge();
+      countMerge(grown, comboRef.current);
       playSound('merge', volumes.merge, spec.radius);
       emit(GameEvent.Merge, { at, radius: spec.radius, color: spec.air?.color ?? '#cfe6ff' });
       emit(GameEvent.Popup, { at, text: `+${points}`, combo: comboRef.current });
       emit(GameEvent.Shake, { trauma: Math.min(0.5, 0.14 + spec.radius * 0.05) });
+      buzz(comboRef.current >= 3 ? HAPTICS.chain : HAPTICS.merge, haptics);
+
+      /* The top of the chain, and the only thing that gives a life back. A Sun
+         cannot merge again, so without this it is just a large piece of furniture
+         at the end of a good run. */
+      if (grown === PlanetType.Sun) {
+        gainLife();
+        emit(GameEvent.Merge, { at, radius: spec.radius * 2.4, color: '#ffcf6a' });
+        emit(GameEvent.Popup, { at, text: 'A star, +1 life', combo: 0 });
+        emit(GameEvent.Shake, { trauma: 0.7 });
+        buzz(HAPTICS.star, haptics);
+      }
     },
-    [addScore, countMerge, drop, setCombo, volumes.merge, write]
+    [addScore, countMerge, drop, gainLife, haptics, setCombo, volumes.merge, write]
   );
 
   useEffect(() => {
@@ -332,6 +358,7 @@ export default function PlanetField() {
       if (silent) return;
       const lost = specOf(type).radius;
       playSound('explosion', volumes.explosion, lost);
+      buzz(HAPTICS.burn, haptics);
       emit(GameEvent.Explode, { at, radius: lost, color: '#ff7a2a' });
       emit(GameEvent.Shake, { trauma: 0.55 });
       loseLife();

@@ -2,10 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { nextId } from './ids';
-import { dealer } from './rng';
-import { DEALT, PlanetType } from './planets';
+import { makeRandom, seedForRun } from './rng';
+import { DEALT, MERGE_CHAIN, PlanetType } from './planets';
 import { fieldRadius } from './tuning';
-import { GameState, START_LIVES } from './state';
+import { GameState, MAX_LIVES, START_LIVES } from './state';
 
 const QUEUE_AHEAD = 3;
 const KEY = 'pc:v1:';
@@ -53,7 +53,11 @@ export default function GameProvider({ children }) {
   const [highscore, setHighscore] = useState(readHighscore);
   const [lives, setLives] = useState(START_LIVES);
   // Held in state, not a ref, because the queue is built from it during render.
-  const [rng, setRng] = useState(() => ({ next: dealer() }));
+  const [seed, setSeed] = useState(seedForRun);
+  const [rng, setRng] = useState(() => ({ next: makeRandom(seed) }));
+  const [hold, setHold] = useState(null);
+  const [best, setBest] = useState({ type: null, chain: 0 });
+  const [haptics, setHapticsState] = useState(() => readNumber('haptics', 1) === 1);
   const [queue, setQueue] = useState(() => freshQueue(rng.next));
   const [combo, setCombo] = useState(0);
   const [runId, setRunId] = useState(0);
@@ -71,6 +75,11 @@ export default function GameProvider({ children }) {
     merge: readNumber('mergeVolume', 0.5),
     shot: readNumber('shotVolume', 0.5)
   }));
+
+  const setHaptics = useCallback((value) => {
+    setHapticsState(value);
+    writeNumber('haptics', value ? 1 : 0);
+  }, []);
 
   const setVolume = useCallback((name, value) => {
     setVolumes((v) => ({ ...v, [name]: value }));
@@ -113,7 +122,39 @@ export default function GameProvider({ children }) {
 
   const closeRules = useCallback(() => setGameState(beforeRules.current), []);
 
-  const countMerge = useCallback(() => setMerges((n) => n + 1), []);
+  const countMerge = useCallback((type, chain) => {
+    setMerges((n) => n + 1);
+    setBest((was) => ({
+      type: MERGE_CHAIN.indexOf(type) > MERGE_CHAIN.indexOf(was.type) ? type : was.type,
+      chain: Math.max(was.chain, chain)
+    }));
+  }, []);
+
+  /* Reaching the top of the chain is the only thing in the game that gives one
+     back. Capped, so a lucky run cannot bank lives it will never need. */
+  const gainLife = useCallback(() => {
+    livesLeft.current = Math.min(MAX_LIVES, livesLeft.current + 1);
+    setLives(livesLeft.current);
+  }, []);
+
+  /* An empty slot takes the planet you are holding and deals you the next one.
+     A full slot trades. Either way the shot count is untouched: a swap is not a
+     shot, and the field only closes for shots. */
+  const swapHold = useCallback(() => {
+    const current = queue[0];
+    if (!current) return;
+
+    if (hold === null) {
+      const replacement = deal(rng.next);
+      setHold(current.type);
+      setQueue((q) => [...q.slice(1), replacement]);
+      return;
+    }
+
+    const traded = { id: nextId(), type: hold };
+    setHold(current.type);
+    setQueue((q) => [traded, ...q.slice(1)]);
+  }, [queue, hold, rng]);
 
   const startRun = useCallback(() => {
     livesLeft.current = START_LIVES;
@@ -124,10 +165,15 @@ export default function GameProvider({ children }) {
     setMerges(0);
     setScore(0);
     setLives(START_LIVES);
-    // A seeded run replays the same deal every time.
-    const fresh = dealer();
-    setRng({ next: fresh });
-    setQueue(freshQueue(fresh));
+    // A seeded run replays the same deal every time; an unseeded one still gets
+    // a seed, so it can be shared afterwards.
+    const fresh = seedForRun();
+    const random = makeRandom(fresh);
+    setSeed(fresh);
+    setRng({ next: random });
+    setQueue(freshQueue(random));
+    setHold(null);
+    setBest({ type: null, chain: 0 });
     setCombo(0);
     setGameState(GameState.Playing);
   }, []);
@@ -151,8 +197,16 @@ export default function GameProvider({ children }) {
       field,
       setBoard,
       countMerge,
+      gainLife,
+      seed,
+      hold,
+      swapHold,
+      best,
+      merges,
       volumes,
       setVolume,
+      haptics,
+      setHaptics,
       addScore,
       loseLife,
       takeFromQueue,
@@ -172,8 +226,16 @@ export default function GameProvider({ children }) {
       field,
       setBoard,
       countMerge,
+      gainLife,
+      seed,
+      hold,
+      swapHold,
+      best,
+      merges,
       volumes,
       setVolume,
+      haptics,
+      setHaptics,
       addScore,
       loseLife,
       takeFromQueue,

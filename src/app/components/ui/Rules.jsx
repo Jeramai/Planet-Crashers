@@ -9,6 +9,7 @@ import Chain from './Chain';
 const CONTROLS = [
   ['Launch', 'Tap, click, or Space'],
   ['Aim', 'Drag to orbit the field'],
+  ['Hold', 'The + slot, or H'],
   ['Zoom', 'Scroll, or pinch'],
   ['Pause', 'Esc']
 ];
@@ -42,6 +43,21 @@ export default function Rules() {
           <p className='m-0 text-sm leading-relaxed text-white/75'>
             A planet more than <b className='text-white'>half outside</b> the field turns red and burns {GRACE_SECONDS} seconds
             later. Get it back inside and the clock resets. {START_LIVES} burns ends the run.
+          </p>
+        </section>
+
+        <section className='flex flex-col gap-2'>
+          <span className='label'>Holding</span>
+          <p className='m-0 text-sm leading-relaxed text-white/75'>
+            The + slot parks the planet you have for later and deals you the next one. Press it again to trade the two. A swap is
+            not a shot, so it costs you no field.
+          </p>
+        </section>
+
+        <section className='flex flex-col gap-2'>
+          <span className='label'>A star</span>
+          <p className='m-0 text-sm leading-relaxed text-white/75'>
+            The top of the chain gives a life back, up to five. It is the only thing that does.
           </p>
         </section>
 

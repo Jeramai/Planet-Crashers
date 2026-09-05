@@ -29,7 +29,7 @@ const TAP_SLOP_PX = 8;
 const TAP_MS = 450;
 
 export default function Scene() {
-  const { gameState, queue, runId, field } = useGame();
+  const { gameState, queue, runId, field, swapHold } = useGame();
   const still = useReducedMotion();
   const playing = gameState === GameState.Playing;
   // The board stays on screen while paused and after the run, so the card sits
@@ -47,6 +47,10 @@ export default function Scene() {
     if (!playing) return;
 
     const onKey = (e) => {
+      if (e.code === 'KeyH' && !e.repeat) {
+        swapHold();
+        return;
+      }
       if (e.code !== 'Space' || e.repeat) return;
       // A focused control owns the space bar. Hijacking it would break keyboard
       // access to pause and the rules.
@@ -58,7 +62,7 @@ export default function Scene() {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [playing]);
+  }, [playing, swapHold]);
 
   const onPointerUp = (e) => {
     if (!playing) return;
