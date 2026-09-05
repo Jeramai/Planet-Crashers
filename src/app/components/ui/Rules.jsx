@@ -24,7 +24,8 @@ export default function Rules() {
         <section className='flex flex-col gap-2'>
           <span className='label'>The chain</span>
           <p className='m-0 text-sm leading-relaxed text-white/75'>
-            Land a planet on its twin and the pair becomes the next body up. Moon to star.
+            Land a planet on its twin and the pair becomes the next body up. Moon to star. One planet is in flight at a time — the
+            sight dims until the last one lands.
           </p>
           <Chain />
         </section>

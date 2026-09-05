@@ -92,6 +92,15 @@ export const spawnRadiusFor = (field) => field + LAUNCH_GAP;
 export const SHOT_SPEED = 6.5;
 export const SHOT_COOLDOWN_MS = 220;
 
+/* One planet in flight at a time. A shot spends about a quarter of a second
+   getting inside the field, out of a two and a half second clock, so firing
+   again immediately cost nothing and spamming beat aiming. Waiting for the last
+   one to land makes every shot deliberate, and throttles itself: a crowded field
+   takes longer to accept a planet, so a full board slows the player down exactly
+   when that matters. Released after this long regardless, or a shot that can
+   never get in would lock the game. */
+export const INBOUND_MAX_MS = 1600;
+
 /* Nothing may move faster than this. An impulse spike from a merge resolving an
    overlap is what used to fling planets clean out of the well. */
 export const MAX_SPEED = 12;
