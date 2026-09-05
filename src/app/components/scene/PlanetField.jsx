@@ -15,6 +15,7 @@ import {
   COMBO_WINDOW_MS,
   BURN_COOLDOWN_MS,
   GRACE_SECONDS,
+  INBOUND_MAX_MS,
   WARNING_AFTER,
   GRAVITY,
   MUTUAL_GRAVITY,
@@ -49,6 +50,8 @@ export default function PlanetField() {
   const lastShot = useRef(0);
   const lastMerge = useRef(0);
   const shieldUntil = useRef(0);
+  const inbound = useRef(new Map());
+  const wasReady = useRef(true);
   const comboRef = useRef(0);
   const alerting = useRef(false);
 
@@ -86,6 +89,7 @@ export default function PlanetField() {
         bodies.current.delete(id);
         flags.current.delete(id);
         outside.current.delete(id);
+        inbound.current.delete(id);
       });
       write((list) => list.filter((p) => !gone.has(p.id)));
     },
@@ -168,6 +172,8 @@ export default function PlanetField() {
     const fire = () => {
       const now = performance.now();
       if (now - lastShot.current < SHOT_COOLDOWN_MS) return;
+      // Nothing leaves the muzzle while the last one is still on its way in.
+      if (inbound.current.size > 0) return;
       lastShot.current = now;
 
       AIM.copy(camera.position).normalize();
@@ -201,6 +207,7 @@ export default function PlanetField() {
         born: 'shot'
       };
       write((list) => [...list, launched]);
+      inbound.current.set(launched.id, now);
 
       takeFromQueue();
       playSound('shot', volumes.shot, spec.radius);
@@ -254,6 +261,10 @@ export default function PlanetField() {
       // starts 1.6 units out and is inside within a quarter of a second, so the
       // rule is simply "half out for three seconds, continuously".
       const inside = distance <= field;
+      if (inbound.current.has(planet.id)) {
+        const since = performance.now() - inbound.current.get(planet.id);
+        if (inside || since > INBOUND_MAX_MS) inbound.current.delete(planet.id);
+      }
       const held = inside ? 0 : (outside.current.get(planet.id) ?? 0) + delta;
       outside.current.set(planet.id, held);
       // Visible the moment it means anything, which is once a launch has had
@@ -294,6 +305,14 @@ export default function PlanetField() {
         bodyA.applyImpulse(BETWEEN, true);
         bodyB.applyImpulse(BETWEEN.multiplyScalar(-1), true);
       }
+    }
+
+    // Edges only, both of these: the reticle and the HUD need the flip, not a
+    // sixty-times-a-second stream.
+    const ready = inbound.current.size === 0;
+    if (ready !== wasReady.current) {
+      wasReady.current = ready;
+      emit(GameEvent.Ready, ready);
     }
 
     // One event on each flip, never per frame: the HUD only needs the edge.

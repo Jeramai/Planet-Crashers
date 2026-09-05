@@ -1,8 +1,9 @@
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdditiveBlending, Color, DoubleSide, Vector3 } from 'three';
+import { GameEvent, on } from '../../game/events';
 import { specOf } from '../../game/planets';
 import { spawnRadiusFor } from '../../game/tuning';
 
@@ -17,6 +18,12 @@ const TRAIL_FADES = Float32Array.from({ length: DOTS }, (_, i) => 1 - i / DOTS);
 /* A camera-facing ring at the exact size of the incoming planet. A solid ghost —
    or a fresnel shell this close to the lens — just paints over the pile. */
 export default function Aim({ type, field }) {
+  // Dimmed while a planet is still on its way in, because the launch is refused
+  // until it lands and a refusal with no feedback just reads as a dropped input.
+  const [ready, setReady] = useState(true);
+
+  useEffect(() => on(GameEvent.Ready, setReady), []);
+
   const spec = specOf(type);
   const camera = useThree((state) => state.camera);
 
@@ -52,7 +59,7 @@ export default function Aim({ type, field }) {
         <meshBasicMaterial
           color='#9fd8ff'
           transparent
-          opacity={0.85}
+          opacity={ready ? 0.85 : 0.16}
           side={DoubleSide}
           depthWrite={false}
           blending={AdditiveBlending}
