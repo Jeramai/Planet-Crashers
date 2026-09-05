@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { nextId } from './ids';
+import { dealer } from './rng';
 import { DEALT, PlanetType } from './planets';
 import { fieldRadius } from './tuning';
 import { GameState, START_LIVES } from './state';
@@ -41,8 +42,8 @@ function readHighscore() {
   }
 }
 
-const deal = (type) => ({ id: nextId(), type: type ?? DEALT[Math.floor(Math.random() * DEALT.length)] });
-const freshQueue = () => [deal(PlanetType.Moon), ...Array.from({ length: QUEUE_AHEAD - 1 }, () => deal())];
+const deal = (random, type) => ({ id: nextId(), type: type ?? DEALT[Math.floor(random() * DEALT.length)] });
+const freshQueue = (random) => [deal(random, PlanetType.Moon), ...Array.from({ length: QUEUE_AHEAD - 1 }, () => deal(random))];
 
 const GameContext = createContext(null);
 
@@ -51,7 +52,9 @@ export default function GameProvider({ children }) {
   const [score, setScore] = useState(0);
   const [highscore, setHighscore] = useState(readHighscore);
   const [lives, setLives] = useState(START_LIVES);
-  const [queue, setQueue] = useState(freshQueue);
+  // Held in state, not a ref, because the queue is built from it during render.
+  const [rng, setRng] = useState(() => ({ next: dealer() }));
+  const [queue, setQueue] = useState(() => freshQueue(rng.next));
   const [combo, setCombo] = useState(0);
   const [runId, setRunId] = useState(0);
   const [shots, setShots] = useState(0);
@@ -96,10 +99,10 @@ export default function GameProvider({ children }) {
   }, []);
 
   const takeFromQueue = useCallback(() => {
-    const next = deal();
+    const next = deal(rng.next);
     setQueue((q) => [...q.slice(1), next]);
     setShots((n) => n + 1);
-  }, []);
+  }, [rng]);
 
   // Reading the rules should put you back where you were, and pause the run
   // while you read, which falls out of the state machine for free.
@@ -121,7 +124,10 @@ export default function GameProvider({ children }) {
     setMerges(0);
     setScore(0);
     setLives(START_LIVES);
-    setQueue(freshQueue());
+    // A seeded run replays the same deal every time.
+    const fresh = dealer();
+    setRng({ next: fresh });
+    setQueue(freshQueue(fresh));
     setCombo(0);
     setGameState(GameState.Playing);
   }, []);

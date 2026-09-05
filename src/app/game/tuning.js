@@ -1,5 +1,7 @@
 import { Vector3 } from 'three';
 
+import { LARGEST_DEALT } from './planets';
+
 /* One place for every number that changes how the game feels. */
 
 /* The field is sized to what it holds.
@@ -16,9 +18,9 @@ import { Vector3 } from 'three';
    line: the field should look full from the first handful of shots. */
 export const PACKING = 0.6;
 export const SLACK_START = 1.22;
-export const SLACK_MIN = 0.78;
-export const SLACK_PER_SHOT = 0.0085;
-export const SLACK_PER_ROOT_POINT = 0.0028;
+export const SLACK_MIN = 0.7;
+export const SLACK_PER_SHOT = 0.011;
+export const SLACK_PER_ROOT_POINT = 0.0018;
 
 /* The floor is not decoration: with one or two planets on the board the volume
    is tiny, and a field sized purely from it would put the opening shot in danger
@@ -29,17 +31,22 @@ export const FIELD_MAX = 7.5;
 /* Merging buys the field back, but less than a shot costs it. Well below
    SLACK_PER_SHOT on purpose: a board that keeps merging closes at about half
    speed, which is a reward you feel without ever reversing the squeeze. */
-export const SLACK_PER_MERGE = 0.003;
+export const SLACK_PER_MERGE = 0.002;
 
 export const contentRadius = (volume) => (Math.max(0, volume) / PACKING) ** (1 / 3);
 
-/* Only enough that the largest body on the board is never doomed by its own
-   size. Sizing the floor to hold the two biggest apart was fairer per planet and
-   ruinous overall: with a Saturn and a Jupiter on the board it forced a field
-   wider than the pile ever grows, and nothing could ever burn. Several planets
-   crossing together is handled by the burn cooldown instead, which is the actual
-   complaint — losing three lives in one breath, not losing one. */
-export const geometricFloor = (biggest) => biggest * 1.15;
+/* Room for one more planet beside the largest body, and no more.
+
+   Big bodies sink to the middle, so a newly dealt planet comes to rest with its
+   centre at the sum of the two radii. Below that the newcomer is over the line
+   the instant it lands, with nothing it could have done differently — which is
+   how an Earth stops fitting once a giant owns the centre.
+
+   Sized from the largest that can be *dealt*, not the second largest on the
+   board: that version was fair per planet and ruinous overall, since a Saturn
+   and a Jupiter together forced a field wider than the pile ever grows and
+   nothing could burn at all. This depends on one body, so it stays bounded. */
+export const geometricFloor = (biggest) => biggest + LARGEST_DEALT + 0.15;
 
 export function fieldRadius(board, shots, score, merges) {
   const slack = Math.max(
@@ -65,6 +72,15 @@ export const BURN_COOLDOWN_MS = 2600;
 export const WARNING_AFTER = 0.9;
 
 export const GRAVITY = 6.5;
+
+/* Mass lives in planets.js as MASS_EXPONENT, next to the radii it is derived
+   from, so tuning does not have to import from a module that imports it back. */
+
+/* Planets pull on each other, faintly. Central gravity alone leaves two twins
+   resting on opposite sides of a giant in perfect equilibrium with no reason to
+   ever meet, so this exists to break that stalemate over several seconds — not
+   to do the merging. Knocking planets together stays the player's job. */
+export const MUTUAL_GRAVITY = 0.22;
 
 /* Launched from just outside the field, wherever the field currently is. A fixed
    spawn ring left every late shot coasting in from far outside the boundary,

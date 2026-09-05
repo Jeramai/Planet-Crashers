@@ -32,6 +32,10 @@ export const MERGE_CHAIN = [
    carried no consequence at all. */
 export const DEALT = MERGE_CHAIN.slice(0, 6);
 
+/* The biggest thing that can arrive unannounced. The field has to have room for
+   one of these beside whatever is already the largest body on the board. */
+export const LARGEST_DEALT = 1.08;
+
 const SPEC = {
   [PlanetType.Moon]: { radius: 0.3, points: 1, roughness: 0.95, bump: 0.03 },
   [PlanetType.Pluto]: { radius: 0.4, points: 3, roughness: 0.95, bump: 0.03 },
@@ -109,10 +113,16 @@ export function volumeOf(type) {
   return r * r * r;
 }
 
-/* Volume-proportional, so a Jupiter falls inward like a Jupiter without the 318x real ratio. */
+/* Mass is compressed, not physical. On real volume a Sun outweighs a Moon 394 to
+   one, so nothing a player launches can shift a giant: it parks in the middle and
+   holds everything else outside, where it burns. At this exponent the ratio is 20
+   to one, which keeps the hierarchy legible while letting a small planet actually
+   move a big one. Central gravity is unaffected either way, because the pull is
+   proportional to mass and the acceleration is therefore identical. */
+export const MASS_EXPONENT = 1.5;
+
 export function massOf(type) {
-  const r = specOf(type).radius;
-  return r * r * r;
+  return specOf(type).radius ** MASS_EXPONENT;
 }
 
 export const TEXTURE_FILES = [...MERGE_CHAIN.map((t) => `${t}.webp`), 'saturn-rings-top.webp'];

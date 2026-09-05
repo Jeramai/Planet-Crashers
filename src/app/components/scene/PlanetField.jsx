@@ -17,6 +17,7 @@ import {
   GRACE_SECONDS,
   WARNING_AFTER,
   GRAVITY,
+  MUTUAL_GRAVITY,
   LOST_DISTANCE,
   MAX_SPEED,
   MERGE_VELOCITY_KEEP,
@@ -31,6 +32,7 @@ import DangerShell from './DangerShell';
 /* Scratch vectors, reused every frame. One PlanetField exists at a time. */
 const AIM = new Vector3();
 const PULL = new Vector3();
+const BETWEEN = new Vector3();
 import Planet from './Planet';
 
 export default function PlanetField() {
@@ -262,6 +264,35 @@ export default function PlanetField() {
 
       if (!shielded && held >= GRACE_SECONDS) {
         doomed.push({ id: planet.id, at: [at.x, at.y, at.z], type: planet.type, silent: false });
+      }
+    }
+
+    // Planets pull on each other as well as on the middle, so twins resting on
+    // opposite sides of a giant eventually find one another. Clamped at contact
+    // distance, or a resolved overlap would launch the pair.
+    const live = planetsRef.current;
+    for (let i = 0; i < live.length; i++) {
+      const bodyA = bodies.current.get(live[i].id);
+      if (!bodyA) continue;
+      const a = bodyA.translation();
+      const radiusA = specOf(live[i].type).radius;
+
+      for (let j = i + 1; j < live.length; j++) {
+        const bodyB = bodies.current.get(live[j].id);
+        if (!bodyB) continue;
+        const b = bodyB.translation();
+
+        BETWEEN.set(b.x - a.x, b.y - a.y, b.z - a.z);
+        const gap = BETWEEN.length();
+        if (gap < 0.0001) continue;
+
+        const touching = radiusA + specOf(live[j].type).radius;
+        const spread = Math.max(gap, touching);
+        const pull = (MUTUAL_GRAVITY * bodyA.mass() * bodyB.mass() * delta) / (spread * spread);
+
+        BETWEEN.multiplyScalar(pull / gap);
+        bodyA.applyImpulse(BETWEEN, true);
+        bodyB.applyImpulse(BETWEEN.multiplyScalar(-1), true);
       }
     }
 
