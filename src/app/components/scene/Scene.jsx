@@ -107,7 +107,10 @@ export default function Scene() {
           <Sunlight />
           {inRun ? (
             <>
-              <PlanetField key={runId} />
+              {/* Its own boundary: a cold physics chunk must not take the sky with it. */}
+              <Suspense fallback={null}>
+                <PlanetField key={runId} />
+              </Suspense>
               <Bursts />
               {playing ? <Popups /> : null}
             </>

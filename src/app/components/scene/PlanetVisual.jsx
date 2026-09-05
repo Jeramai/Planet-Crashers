@@ -2,7 +2,7 @@
 
 import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { Color, DoubleSide, RingGeometry, Vector3 } from 'three';
 import { textureUrl } from '../../game/assets';
 import { PlanetType, specOf } from '../../game/planets';
@@ -12,7 +12,29 @@ import Atmosphere from './Atmosphere';
 const NO_GLOW = new Color('#000000');
 const WARNING = new Color('#ff2d2d');
 
-export default function PlanetVisual({ type, spin = 0.08, flags = null, flagKey = null }) {
+/* A texture that has not arrived suspends, and the scene has one boundary around
+   everything, so without this a single late image blanks the sky, the stars and
+   every planet already on the board. The stand-in keeps that cost to one skin. */
+export default function PlanetVisual({ type, ...rest }) {
+  return (
+    <Suspense fallback={<PlanetShell type={type} />}>
+      <TexturedPlanet type={type} {...rest} />
+    </Suspense>
+  );
+}
+
+function PlanetShell({ type }) {
+  const spec = specOf(type);
+
+  return (
+    <mesh castShadow receiveShadow>
+      <sphereGeometry args={[spec.radius, 32, 24]} />
+      <meshStandardMaterial color={spec.air?.color ?? '#7d838f'} roughness={spec.roughness} metalness={0} />
+    </mesh>
+  );
+}
+
+function TexturedPlanet({ type, spin = 0.08, flags = null, flagKey = null }) {
   const spec = specOf(type);
   const map = useTexture(textureUrl(`${type}.webp`), setUpTexture);
 
