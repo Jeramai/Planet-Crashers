@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { thumbUrl } from '../../game/assets';
+import { PlanetType } from '../../game/planets';
 import { GameState } from '../../game/state';
 import { useGame } from '../../game/store';
 import Button from './Button';
@@ -13,7 +14,7 @@ function shareUrl(seed) {
 }
 
 export default function GameOver() {
-  const { score, highscore, seed, best, merges, shots, startRun, setGameState } = useGame();
+  const { score, highscore, seed, best, merges, shots, suns, startRun, setGameState } = useGame();
   const [shared, setShared] = useState(null);
   const isBest = score > 0 && score >= highscore;
 
@@ -68,6 +69,7 @@ export default function GameOver() {
               <span className='inline-flex items-center gap-1.5'>
                 <Image src={thumbUrl(best.type)} alt='' width={18} height={18} unoptimized className='size-[18px] rounded-full' />
                 <span className='capitalize'>{best.type}</span>
+                {best.type === PlanetType.Sun && suns > 1 ? <span className='text-amber-300'>&times;{suns}</span> : null}
               </span>
             ) : (
               '—'
