@@ -1,5 +1,8 @@
 'use client';
 
+import { useTransition } from 'react';
+
+import { preloadField } from '../scene/preload-field';
 import { useGame } from '../../game/store';
 import { GameState } from '../../game/state';
 import Button from './Button';
@@ -7,6 +10,15 @@ import Chain from './Chain';
 
 export default function Menu() {
   const { highscore, startRun, setGameState, showRules } = useGame();
+  const [loadingField, beginRun] = useTransition();
+
+  // On a slow link the physics can still be in flight when the menu appears.
+  // Waiting here beats starting a run with a field that cannot be shot at.
+  const start = () =>
+    beginRun(async () => {
+      await preloadField();
+      startRun();
+    });
 
   return (
     <Shell>
@@ -23,8 +35,8 @@ export default function Menu() {
       </div>
 
       <div className='animate-rise-in flex flex-col items-center gap-3' style={{ animationDelay: '150ms' }}>
-        <Button variant='primary' onClick={startRun}>
-          Start run
+        <Button variant='primary' onClick={start} disabled={loadingField} onPointerEnter={preloadField} onFocus={preloadField}>
+          {loadingField ? 'Loading…' : 'Start run'}
         </Button>
         <Button onClick={() => showRules(GameState.Menu)}>How to play</Button>
         <Button onClick={() => setGameState(GameState.Options)}>Options</Button>

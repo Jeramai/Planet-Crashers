@@ -1,8 +1,8 @@
 'use client';
 
-import { OrbitControls, PerspectiveCamera, Preload, useTexture } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Preload, useProgress, useTexture } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { NoToneMapping } from 'three';
 import { textureUrl } from '../../game/assets';
 import { emit, GameEvent } from '../../game/events';
@@ -16,13 +16,16 @@ import Bursts from './Bursts';
 import Effects from './Effects';
 import MenuStage from './MenuStage';
 import Nebula from './Nebula';
-import PlanetField from './PlanetField';
 import Popups from './Popups';
+import { preloadField } from './preload-field';
 import ShakeGroup from './ShakeGroup';
 import ShootingStars from './ShootingStars';
 import Sunlight from './Sunlight';
 
 if (typeof window !== 'undefined') useTexture.preload(TEXTURE_FILES.map(textureUrl));
+
+// Rapier and its wasm are half the payload and the menu never touches them.
+const PlanetField = lazy(preloadField);
 
 const MAX_FOV = 76;
 const TAP_SLOP_PX = 8;
@@ -36,6 +39,20 @@ export default function Scene() {
   // over the arrangement the player actually built.
   const inRun = playing || gameState === GameState.Paused || gameState === GameState.Rules || gameState === GameState.Over;
   const press = useRef({ x: 0, y: 0, at: 0 });
+
+  // Only once the textures are in. Fetching it earlier costs the menu its
+  // largest paint, and nobody reads the menu and presses start inside a second.
+  const loaded = useProgress((state) => !state.active && state.progress >= 100);
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(() => void preloadField());
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(() => void preloadField(), 400);
+    return () => clearTimeout(id);
+  }, [loaded]);
 
   // One rule for mouse and touch: a press that neither moved nor lingered is a
   // shot, anything else belongs to the orbit control.
@@ -72,7 +89,7 @@ export default function Scene() {
 
   return (
     <Canvas
-      className='!fixed inset-0'
+      className='!fixed inset-0 touch-none'
       dpr={[1, 2]}
       gl={{ antialias: false, toneMapping: NoToneMapping, powerPreference: 'high-performance' }}
       onPointerDown={onPointerDown}
