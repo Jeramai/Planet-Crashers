@@ -1,11 +1,11 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { nextId } from './ids';
+import { DEALT, PlanetType } from './planets';
 import { makeRandom, seedForRun } from './rng';
-import { DEALT, MERGE_CHAIN, PlanetType } from './planets';
+import { runReducer, startingRun } from './run';
 import { fieldRadius } from './tuning';
-import { GameState, MAX_LIVES, START_LIVES } from './state';
 
 const QUEUE_AHEAD = 3;
 const KEY = 'pc:v1:';
@@ -45,36 +45,29 @@ function readHighscore() {
 const deal = (random, type) => ({ id: nextId(), type: type ?? DEALT[Math.floor(random() * DEALT.length)] });
 const freshQueue = (random) => [deal(random, PlanetType.Moon), ...Array.from({ length: QUEUE_AHEAD - 1 }, () => deal(random))];
 
+/* A seeded run replays the same deal every time; an unseeded one still gets a
+   seed, so it can be shared afterwards. */
+function openingDeal() {
+  const seed = seedForRun();
+  const random = makeRandom(seed);
+  return { seed, rng: { next: random }, queue: freshQueue(random) };
+}
+
 const GameContext = createContext(null);
 
 export default function GameProvider({ children }) {
-  const [gameState, setGameState] = useState(GameState.Menu);
-  const [score, setScore] = useState(0);
-  const [highscore, setHighscore] = useState(readHighscore);
-  const [lives, setLives] = useState(START_LIVES);
-  // Held in state, not a ref, because the queue is built from it during render.
-  const [seed, setSeed] = useState(seedForRun);
-  const [rng, setRng] = useState(() => ({ next: makeRandom(seed) }));
-  const [hold, setHold] = useState(null);
-  const [best, setBest] = useState({ type: null, chain: 0 });
+  const [run, dispatch] = useReducer(runReducer, null, () => startingRun({ ...openingDeal(), highscore: readHighscore() }));
   const [haptics, setHapticsState] = useState(() => readNumber('haptics', 1) === 1);
-  const [queue, setQueue] = useState(() => freshQueue(rng.next));
-  const [combo, setCombo] = useState(0);
-  const [runId, setRunId] = useState(0);
-  const [shots, setShots] = useState(0);
-  const [board, setBoard] = useState({ volume: 0, biggest: 0, second: 0 });
-  const [merges, setMerges] = useState(0);
-  const livesLeft = useRef(START_LIVES);
-  const beforeRules = useRef(GameState.Menu);
-  const scoreSoFar = useRef(0);
-  const bestSoFar = useRef(0);
-
   const [volumes, setVolumes] = useState(() => ({
     music: readNumber('musicVolume', 0.45),
     explosion: readNumber('explosionVolume', 0.5),
     merge: readNumber('mergeVolume', 0.5),
     shot: readNumber('shotVolume', 0.5)
   }));
+
+  useEffect(() => {
+    if (run.highscore > 0) writeNumber('highscore', run.highscore);
+  }, [run.highscore]);
 
   const setHaptics = useCallback((value) => {
     setHapticsState(value);
@@ -86,162 +79,71 @@ export default function GameProvider({ children }) {
     writeNumber(`${name}Volume`, value);
   }, []);
 
-  useEffect(() => {
-    bestSoFar.current = Math.max(bestSoFar.current, highscore);
-  }, [highscore]);
+  const setGameState = useCallback((to) => dispatch({ type: 'goto', to }), []);
+  const showRules = useCallback((from) => dispatch({ type: 'openRules', from }), []);
+  const closeRules = useCallback(() => dispatch({ type: 'closeRules' }), []);
+  const startRun = useCallback(() => dispatch({ type: 'start', ...openingDeal() }), []);
+  const addScore = useCallback((points) => dispatch({ type: 'score', points }), []);
+  const loseLife = useCallback(() => dispatch({ type: 'burn' }), []);
+  const gainLife = useCallback(() => dispatch({ type: 'star' }), []);
+  const setBoard = useCallback((board) => dispatch({ type: 'board', board }), []);
+  const countMerge = useCallback((planet, chain) => dispatch({ type: 'merge', planet, chain }), []);
+  const setCombo = useCallback((value) => dispatch({ type: 'combo', value }), []);
 
-  // Both counters live in refs so neither updater has to reach for the other.
-  const addScore = useCallback((points) => {
-    scoreSoFar.current += points;
-    setScore(scoreSoFar.current);
-    if (scoreSoFar.current <= bestSoFar.current) return;
-    bestSoFar.current = scoreSoFar.current;
-    setHighscore(bestSoFar.current);
-    writeNumber('highscore', bestSoFar.current);
-  }, []);
+  const takeFromQueue = useCallback(() => dispatch({ type: 'shoot', dealt: deal(run.rng.next) }), [run.rng]);
 
-  // The run ends from the event that ended it, not from an effect watching lives.
-  const loseLife = useCallback(() => {
-    livesLeft.current = Math.max(0, livesLeft.current - 1);
-    setLives(livesLeft.current);
-    if (livesLeft.current === 0) setGameState(GameState.Over);
-  }, []);
-
-  const takeFromQueue = useCallback(() => {
-    const next = deal(rng.next);
-    setQueue((q) => [...q.slice(1), next]);
-    setShots((n) => n + 1);
-  }, [rng]);
-
-  // Reading the rules should put you back where you were, and pause the run
-  // while you read, which falls out of the state machine for free.
-  const showRules = useCallback((from) => {
-    beforeRules.current = from;
-    setGameState(GameState.Rules);
-  }, []);
-
-  const closeRules = useCallback(() => setGameState(beforeRules.current), []);
-
-  const countMerge = useCallback((type, chain) => {
-    setMerges((n) => n + 1);
-    setBest((was) => ({
-      type: MERGE_CHAIN.indexOf(type) > MERGE_CHAIN.indexOf(was.type) ? type : was.type,
-      chain: Math.max(was.chain, chain)
-    }));
-  }, []);
-
-  /* Reaching the top of the chain is the only thing in the game that gives one
-     back. Capped, so a lucky run cannot bank lives it will never need. */
-  const gainLife = useCallback(() => {
-    livesLeft.current = Math.min(MAX_LIVES, livesLeft.current + 1);
-    setLives(livesLeft.current);
-  }, []);
-
-  /* An empty slot takes the planet you are holding and deals you the next one.
-     A full slot trades. Either way the shot count is untouched: a swap is not a
-     shot, and the field only closes for shots. */
+  // The draw only happens when the slot is empty, so a trade cannot quietly
+  // advance the seeded deal and put two players on different sequences.
   const swapHold = useCallback(() => {
-    const current = queue[0];
-    if (!current) return;
+    if (!run.queue[0]) return;
+    if (run.hold === null) dispatch({ type: 'hold', dealt: deal(run.rng.next) });
+    else dispatch({ type: 'hold', traded: { id: nextId(), type: run.hold } });
+  }, [run.queue, run.hold, run.rng]);
 
-    if (hold === null) {
-      const replacement = deal(rng.next);
-      setHold(current.type);
-      setQueue((q) => [...q.slice(1), replacement]);
-      return;
-    }
-
-    const traded = { id: nextId(), type: hold };
-    setHold(current.type);
-    setQueue((q) => [traded, ...q.slice(1)]);
-  }, [queue, hold, rng]);
-
-  const startRun = useCallback(() => {
-    livesLeft.current = START_LIVES;
-    scoreSoFar.current = 0;
-    setRunId((n) => n + 1);
-    setShots(0);
-    setBoard({ volume: 0, biggest: 0, second: 0 });
-    setMerges(0);
-    setScore(0);
-    setLives(START_LIVES);
-    // A seeded run replays the same deal every time; an unseeded one still gets
-    // a seed, so it can be shared afterwards.
-    const fresh = seedForRun();
-    const random = makeRandom(fresh);
-    setSeed(fresh);
-    setRng({ next: random });
-    setQueue(freshQueue(random));
-    setHold(null);
-    setBest({ type: null, chain: 0 });
-    setCombo(0);
-    setGameState(GameState.Playing);
-  }, []);
-
-  // The field is sized to what is inside it, so it belongs with the board state
-  // rather than with any one component that happens to draw it.
-  const field = fieldRadius(board, shots, score, merges);
+  // The field is sized to what is inside it, so it belongs with the run rather
+  // than with any one component that happens to draw it.
+  const field = fieldRadius(run.board, run.shots, run.score, run.merges);
 
   const value = useMemo(
     () => ({
-      gameState,
-      setGameState,
-      score,
-      highscore,
-      lives,
-      queue,
-      combo,
-      setCombo,
-      runId,
-      shots,
+      ...run,
       field,
-      setBoard,
-      countMerge,
-      gainLife,
-      seed,
-      hold,
-      swapHold,
-      best,
-      merges,
-      volumes,
-      setVolume,
       haptics,
       setHaptics,
+      volumes,
+      setVolume,
+      setGameState,
+      showRules,
+      closeRules,
+      startRun,
       addScore,
       loseLife,
+      gainLife,
+      setBoard,
+      countMerge,
+      setCombo,
       takeFromQueue,
-      startRun,
-      showRules,
-      closeRules
+      swapHold
     }),
     [
-      gameState,
-      score,
-      highscore,
-      lives,
-      queue,
-      combo,
-      runId,
-      shots,
+      run,
       field,
-      setBoard,
-      countMerge,
-      gainLife,
-      seed,
-      hold,
-      swapHold,
-      best,
-      merges,
-      volumes,
-      setVolume,
       haptics,
       setHaptics,
+      volumes,
+      setVolume,
+      setGameState,
+      showRules,
+      closeRules,
+      startRun,
       addScore,
       loseLife,
+      gainLife,
+      setBoard,
+      countMerge,
+      setCombo,
       takeFromQueue,
-      startRun,
-      showRules,
-      closeRules
+      swapHold
     ]
   );
 
