@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: process.env.NODE_ENV === "production" ? "/Planet-Crashers" : undefined,
-  reactStrictMode: true,
+  output: 'export',
+  basePath: process.env.NODE_ENV === 'production' ? '/Planet-Crashers' : undefined,
+  images: { unoptimized: true },
+  reactStrictMode: true
 };
 
-module.exports = nextConfig
+module.exports = nextConfig;
