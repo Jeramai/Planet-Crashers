@@ -22,7 +22,10 @@ import ShakeGroup from './ShakeGroup';
 import ShootingStars from './ShootingStars';
 import Sunlight from './Sunlight';
 
-if (typeof window !== 'undefined') useTexture.preload(TEXTURE_FILES.map(textureUrl));
+/* One url per call. useLoader keys its cache on [loader, ...urls], so preloading
+   the whole list under one key fills a slot that a single-texture lookup never
+   reads back, and every planet loads again the first time it is drawn. */
+if (typeof window !== 'undefined') TEXTURE_FILES.forEach((name) => useTexture.preload(textureUrl(name)));
 
 // Rapier and its wasm are half the payload and the menu never touches them.
 const PlanetField = lazy(preloadField);
