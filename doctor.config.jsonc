@@ -1,0 +1,7 @@
+{
+  // oxlint's `extends` drops `env`, so the config React Doctor generates from
+  // .oxlintrc.json cannot see the browser. `bun run lint` still enforces this.
+  "rules": {
+    "eslint/no-undef": "off"
+  }
+}
