@@ -24,12 +24,12 @@ function Orb({ type, size }) {
 }
 
 export default function Hud() {
-  const { score, highscore, lives, queue, combo, setGameState, showRules } = useGame();
+  const { score, highscore, lives, queue, combo, hold, swapHold, setGameState, showRules } = useGame();
   const [danger, setDanger] = useState(false);
 
   useEffect(() => on(GameEvent.Danger, setDanger), []);
 
-  const [current, ...upcoming] = queue;
+  const [current, next] = queue;
   const currentType = current?.type;
 
   return (
@@ -95,13 +95,22 @@ export default function Hud() {
             {currentType ? <Orb type={currentType} size={64} /> : <span className='size-16' />}
             <span className='label'>{currentType ? `${specOf(currentType).points} pts` : ''}</span>
           </div>
+
           <div className='flex flex-col items-center gap-1.5'>
-            <div className='flex gap-2'>
-              {upcoming.map((item) => (
-                <Orb key={item.id} type={item.type} size={30} />
-              ))}
-            </div>
+            {next ? <Orb type={next.type} size={30} /> : <span className='size-[30px]' />}
             <span className='label'>Next</span>
+          </div>
+
+          <div className='flex flex-col items-center gap-1.5'>
+            <button
+              type='button'
+              onClick={swapHold}
+              className='pointer-events-auto grid size-[30px] place-items-center rounded-full border border-dashed border-white/25 text-white/50 transition hover:border-white/60 hover:text-white/90'
+              aria-label={hold ? `Swap with held ${hold}` : 'Hold this planet'}
+            >
+              {hold ? <Orb type={hold} size={30} /> : <span className='text-base leading-none'>+</span>}
+            </button>
+            <span className='label'>Hold</span>
           </div>
         </div>
       </div>

@@ -8,3 +8,4 @@ export const GameState = {
 };
 
 export const START_LIVES = 3;
+export const MAX_LIVES = 5;

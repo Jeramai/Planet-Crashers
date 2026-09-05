@@ -28,7 +28,8 @@ export function seedFromUrl() {
   }
 }
 
-export const dealer = () => {
-  const seed = seedFromUrl();
-  return seed === null ? Math.random : makeRandom(seed);
-};
+export const newSeed = () => Math.floor(Math.random() * 1e9);
+
+/* Every run gets a seed, whether or not the URL asked for one, so any run can be
+   handed to somebody else exactly as it was played. */
+export const seedForRun = () => seedFromUrl() ?? newSeed();
